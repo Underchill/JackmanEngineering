@@ -6,7 +6,8 @@
     <title>Telescoping Toilet Flange 3D Visualizer</title>
     
     <!-- 1. Load Tailwind CSS for styling -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Added ?plugins=typography for prose text styling -->
+    <script src="https://cdn.tailwindcss.com/"></script>
     
     <!-- 2. Load three.js (the 3D library) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -32,24 +33,22 @@
         }
         /* Make html and body take full height */
         html, body {
-            height: 100%;
+            /* height: 100%; */ /* Removed to allow content to define height */
             margin: 0;
-            overflow: hidden; /* Hide page scrollbars */
+            /* overflow: hidden; */ /* Removed to allow scrolling if needed */
         }
     </style>
 </head>
-<body class="bg-slate-100 flex items-center justify-center min-h-screen font-sans">
+<!-- Changed classes: Removed centering, added padding and flex-col -->
+<body class="bg-slate-100 p-4 md:p-8 font-sans min-h-screen flex flex-col">
 
     <!-- Main content card -->
-    <!-- Increased max-width from 4xl to 6xl for the side-by-side layout -->
-    <div class="bg-white rounded-xl shadow-2xl p-6 md:p-8 w-11/12 max-w-5xl max-h-[190vh] flex flex-col">
+    <!-- Changed classes: Removed w-11/12, max-w-6xl, max-h-[90vh]. Added w-full and flex-grow -->
+    <div class="bg-white rounded-xl shadow-2xl p-6 md:p-8 w-full flex-grow flex flex-col">
         
         <!-- Header -->
         <div class="flex-shrink-0">
             <h1 class="text-2xl md:text-3xl font-bold text-slate-800">Telescoping Toilet Flange 3D Visualizer</h1>
-            <p class="text-slate-600 mt-2">
-                Click and drag to rotate the model. Use the scroll wheel to zoom.
-            </p>
         </div>
 
         <!-- 
@@ -62,9 +61,10 @@
             <!-- 
               Column 1: Canvas Container
               Takes 60% of width on desktop, full width on mobile.
-              min-h-[300px] for mobile, h-full on desktop.
+              min-h-[50vh] (mobile) for more vertical space, md:min-h-0 (desktop).
+              Added flex-grow and flex-shrink to allow flexible sizing on mobile.
             -->
-            <div id="canvas-container" class="w-full md:w-3/5 rounded-lg overflow-hidden bg-slate-200 relative min-h-[300px] md:min-h-0">
+            <div id="canvas-container" class="w-full md:w-3/5 rounded-lg overflow-hidden bg-slate-200 relative min-h-[50vh] md:min-h-0 flex-grow flex-shrink">
                 <!-- This is the canvas our 3D scene will be rendered into -->
                 <!-- The CSS 'canvas { width: 100%; height: 100% }' will make it fill this div -->
                 <canvas id="model-canvas"></canvas>
@@ -79,8 +79,9 @@
               Column 2: Text Box
               Takes 40% of width on desktop, full width on mobile.
               Uses flex-col to allow text area to grow and scroll.
+              Added flex-grow and flex-shrink to allow flexible sizing on mobile.
             -->
-            <div class="w-full md:w-2/5 flex flex-col min-h-[200px] md:h-full">
+            <div class="w-full md:w-2/5 flex flex-col min-h-[200px] md:h-full flex-grow flex-shrink">
                 <h2 class="text-xl font-semibold text-slate-700 mb-3 flex-shrink-0">Model Details</h2>
                 <!-- 
                   This div holds the text. 
@@ -89,7 +90,9 @@
                   prose: from tailwind typography for nice text styling.
                 -->
                 <div class="prose prose-slate bg-slate-50 border border-slate-200 rounded-lg p-4 flex-grow overflow-y-auto">
+                    
                     <p>Abstract</p>
+
                     <p>A telescoping toilet mounting assembly and a method for mounting a toilet to a floor and a wastewater pipe. Hollow bolts project from clamping plates to be received through mounting holes in an upper male flange section and through mounting holes of a toilet base. Base bolt nuts are tightened onto the hollow bolts to secure the upper male flange section to the toilet base prior to lowering the toilet and the upper male flange section into engagement with a lower female flange section. Fastening bolt structures with adjustable-length body portions and threaded tips can pass through the hollow bolts and into threaded engagement with mounting members fixed to the lower female flange section fixed to the wastewater pipe and the floor. Alternatively, fastening bolts pass through the hollow bolts and into threaded engagement with upstanding registration and locking rods retained relative to the lower female flange section.</p>
                 </div>
             </div>
@@ -146,8 +149,8 @@
 
         const mtlLoader = new THREE.MTLLoader();
         const objLoader = new THREE.OBJLoader();
-        const mtlPath = './webvis.mtl'; // <-- REPLACE THIS
-        const objPath = './webvis.obj'; // <-- REPLACE THIS
+        const mtlPath = './fakeflange.mtl'; // <-- REPLACE THIS
+        const objPath = './fakeflange.obj'; // <-- REPLACE THIS
         
         mtlLoader.load(mtlPath, (materials) => {
             materials.preload();
