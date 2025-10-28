@@ -41,7 +41,8 @@
 <body class="bg-slate-100 flex items-center justify-center min-h-screen font-sans">
 
     <!-- Main content card -->
-    <div class="bg-white rounded-xl shadow-2xl p-6 md:p-8 w-11/12 max-w-5xl max-h-[90vh] flex flex-col">
+    <!-- Increased max-width from 4xl to 6xl for the side-by-side layout -->
+    <div class="bg-white rounded-xl shadow-2xl p-6 md:p-8 w-11/12 max-w-5xl max-h-[190vh] flex flex-col">
         
         <!-- Header -->
         <div class="flex-shrink-0">
@@ -52,21 +53,50 @@
         </div>
 
         <!-- 
-          Canvas Container: 
-          This div defines the size and aspect ratio of our 3D scene.
-          The canvas inside will be forced to fill this container.
+          NEW: Content container for columns 
+          This stacks on mobile (flex-col) and goes side-by-side on desktop (md:flex-row)
+          min-h-0 prevents flexbox overflow issues
         -->
-        <div id="canvas-container" class="w-full mt-6 rounded-lg overflow-hidden flex-grow min-h-[600px] md:min-h-[1000px] bg-slate-200 relative">
-            <!-- This is the canvas our 3D scene will be rendered into -->
-            <canvas id="model-canvas"></canvas>
-            
-            <!-- Loading indicator -->
-            <div id="loading-indicator" class="absolute inset-0 flex items-center justify-center bg-slate-200 bg-opacity-80 p-4">
-                <div class="text-slate-700 font-semibold">Loading 3D model...</div>
-            </div>
-        </div>
+        <div class="flex-grow flex flex-col md:flex-row mt-6 gap-6 min-h-0">
 
-    </div>
+            <!-- 
+              Column 1: Canvas Container
+              Takes 60% of width on desktop, full width on mobile.
+              min-h-[300px] for mobile, h-full on desktop.
+            -->
+            <div id="canvas-container" class="w-full md:w-3/5 rounded-lg overflow-hidden bg-slate-200 relative min-h-[300px] md:min-h-0">
+                <!-- This is the canvas our 3D scene will be rendered into -->
+                <!-- The CSS 'canvas { width: 100%; height: 100% }' will make it fill this div -->
+                <canvas id="model-canvas"></canvas>
+                
+                <!-- Loading indicator -->
+                <div id="loading-indicator" class="absolute inset-0 flex items-center justify-center bg-slate-200 bg-opacity-80 p-4">
+                    <div class="text-slate-700 font-semibold">Loading 3D model...</div>
+                </div>
+            </div>
+
+            <!-- 
+              Column 2: Text Box
+              Takes 40% of width on desktop, full width on mobile.
+              Uses flex-col to allow text area to grow and scroll.
+            -->
+            <div class="w-full md:w-2/5 flex flex-col min-h-[200px] md:h-full">
+                <h2 class="text-xl font-semibold text-slate-700 mb-3 flex-shrink-0">Model Details</h2>
+                <!-- 
+                  This div holds the text. 
+                  flex-grow: makes it fill the available space in this column.
+                  overflow-y-auto: adds a scrollbar if content overflows.
+                  prose: from tailwind typography for nice text styling.
+                -->
+                <div class="prose prose-slate bg-slate-50 border border-slate-200 rounded-lg p-4 flex-grow overflow-y-auto">
+                    <p>Abstract</p>
+                    <p>A telescoping toilet mounting assembly and a method for mounting a toilet to a floor and a wastewater pipe. Hollow bolts project from clamping plates to be received through mounting holes in an upper male flange section and through mounting holes of a toilet base. Base bolt nuts are tightened onto the hollow bolts to secure the upper male flange section to the toilet base prior to lowering the toilet and the upper male flange section into engagement with a lower female flange section. Fastening bolt structures with adjustable-length body portions and threaded tips can pass through the hollow bolts and into threaded engagement with mounting members fixed to the lower female flange section fixed to the wastewater pipe and the floor. Alternatively, fastening bolts pass through the hollow bolts and into threaded engagement with upstanding registration and locking rods retained relative to the lower female flange section.</p>
+                </div>
+            </div>
+
+        </div> <!-- End of columns container -->
+
+    </div> <!-- End of main card -->
 
     <!-- The JavaScript for setting up the 3D scene -->
     <script type="module">
@@ -81,7 +111,6 @@
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x858585); // Match page background
 
-        // Camera: This is the "eye" through which we see the scene
         // new THREE.PerspectiveCamera(FieldOfView, AspectRatio, NearClip, FarClip)
         const camera = new THREE.PerspectiveCamera(
             75, // Field of view
@@ -102,8 +131,6 @@
 
         // ======== 2. Lights ========
         
-        // We need light to see materials like MeshStandardMaterial
-        
         // Ambient Light: Illuminates all objects in the scene equally
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
         scene.add(ambientLight);
@@ -115,30 +142,13 @@
 
         // ======== 3. Load the .OBJ Model ========
         
-        // We'll store our loaded model in this variable
         let loadedModel;
 
         const mtlLoader = new THREE.MTLLoader();
         const objLoader = new THREE.OBJLoader();
-
-        // --- Instructions ---
-        // 1. Upload your .obj and .mtl files to a web-accessible location
-        //    (e.g., GitHub, a file hosting service, or your own web server).
-        // 2. Replace the placeholder paths below with your file URLs.
-
         const mtlPath = './webvis.mtl'; // <-- REPLACE THIS
         const objPath = './webvis.obj'; // <-- REPLACE THIS
         
-        // Show a message if the paths haven't been changed
-        if (mtlPath === 'path/to/your/model.mtl') {
-             loadingIndicator.innerHTML = `
-                <div class="text-center">
-                    <div class="font-bold text-lg text-slate-800">Ready to load your model!</div>
-                    <p class="text-slate-600 mt-2">Please edit the <code>mtlPath</code> and <code>objPath</code> variables in this file's JavaScript to load your <code>.obj</code> and <code>.mtl</code> files.</p>
-                </div>
-            `;
-        }
-
         mtlLoader.load(mtlPath, (materials) => {
             materials.preload();
             objLoader.setMaterials(materials);
@@ -178,24 +188,18 @@
             (error) => {
                 // Called when loading fails
                 console.error('An error happened during .obj loading', error);
-                if (mtlPath !== 'path/to/your/model.mtl') {
-                    loadingIndicator.innerHTML = `<div class="text-red-600 font-semibold text-center">Error loading model. Check console (F12) and file paths.</div>`;
-                }
+                loadingIndicator.innerHTML = `<div class="text-red-600 font-semibold text-center">An error happened during .obj loading.</div>`;
             });
             
         }, 
         (xhr) => {
              // Called while loading .mtl is progressing
-             if (mtlPath !== 'path/to/your/model.mtl') {
-                loadingIndicator.innerHTML = `<div class="text-slate-700 font-semibold">Loading materials...</div>`;
-             }
+             loadingIndicator.innerHTML = `<div class="text-slate-700 font-semibold">Loading materials...</div>`;
         },
         (error) => {
             // Called when .mtl loading fails
             console.error('An error happened during .mtl loading', error);
-            if (mtlPath !== 'path/to/your/model.mtl') {
-                loadingIndicator.innerHTML = `<div class="text-red-600 font-semibold text-center">Error loading materials. Check console (F12) and file paths.</div>`;
-            }
+             loadingIndicator.innerHTML = `<div class="text-red-600 font-semibold">Error loading materials...</div>`;
         });
 
 
