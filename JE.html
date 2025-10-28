@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telescoping Toilet Flange 3D Visualizer</title>
+    
+    <!-- 1. Load Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 2. Load three.js (the 3D library) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <!-- 3. Load OrbitControls (for mouse interaction) -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    
+    <!-- 4. Load MTLLoader (for .mtl materials) -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/MTLLoader.js"></script>
+    <!-- 5. Load OBJLoader (for .obj geometry) -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+    
+    <style>
+        /* Use the Inter font, as per instructions */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Ensure the canvas is a block element to prevent layout issues */
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        /* Make html and body take full height */
+        html, body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden; /* Hide page scrollbars */
+        }
+    </style>
+</head>
+<body class="bg-slate-100 flex items-center justify-center min-h-screen font-sans">
+
+    <!-- Main content card -->
+    <div class="bg-white rounded-xl shadow-2xl p-6 md:p-8 w-11/12 max-w-5xl max-h-[90vh] flex flex-col">
+        
+        <!-- Header -->
+        <div class="flex-shrink-0">
+            <h1 class="text-2xl md:text-3xl font-bold text-slate-800">Telescoping Toilet Flange 3D Visualizer</h1>
+            <p class="text-slate-600 mt-2">
+                Click and drag to rotate the model. Use the scroll wheel to zoom.
+            </p>
+        </div>
+
+        <!-- 
+          Canvas Container: 
+          This div defines the size and aspect ratio of our 3D scene.
+          The canvas inside will be forced to fill this container.
+        -->
+        <div id="canvas-container" class="w-full mt-6 rounded-lg overflow-hidden flex-grow min-h-[600px] md:min-h-[1000px] bg-slate-200 relative">
+            <!-- This is the canvas our 3D scene will be rendered into -->
+            <canvas id="model-canvas"></canvas>
+            
+            <!-- Loading indicator -->
+            <div id="loading-indicator" class="absolute inset-0 flex items-center justify-center bg-slate-200 bg-opacity-80 p-4">
+                <div class="text-slate-700 font-semibold">Loading 3D model...</div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- The JavaScript for setting up the 3D scene -->
+    <script type="module">
+        // Find the canvas and its container
+        const canvas = document.getElementById('model-canvas');
+        const container = document.getElementById('canvas-container');
+        const loadingIndicator = document.getElementById('loading-indicator');
+
+        // ======== 1. Core Three.js Components ========
+        
+        // Scene: This is the container for all our 3D objects
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x858585); // Match page background
+
+        // Camera: This is the "eye" through which we see the scene
+        // new THREE.PerspectiveCamera(FieldOfView, AspectRatio, NearClip, FarClip)
+        const camera = new THREE.PerspectiveCamera(
+            75, // Field of view
+            container.clientWidth / container.clientHeight, // Aspect ratio
+            0.1, // Near clipping plane
+            1000 // Far clipping plane
+        );
+        // Move the camera back so we can see the model
+        camera.position.set(0, 10, 30);
+
+        // Renderer: This draws the scene onto the canvas
+        const renderer = new THREE.WebGLRenderer({ 
+            canvas: canvas, 
+            antialias: true // Makes edges look smoother
+        });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio); // For sharp rendering on high-DPI screens
+
+        // ======== 2. Lights ========
+        
+        // We need light to see materials like MeshStandardMaterial
+        
+        // Ambient Light: Illuminates all objects in the scene equally
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        // Directional Light: Shines from a specific direction (like the sun)
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+        directionalLight.position.set(10, 20, 10);
+        scene.add(directionalLight);
+
+        // ======== 3. Load the .OBJ Model ========
+        
+        // We'll store our loaded model in this variable
+        let loadedModel;
+
+        const mtlLoader = new THREE.MTLLoader();
+        const objLoader = new THREE.OBJLoader();
+
+        // --- Instructions ---
+        // 1. Upload your .obj and .mtl files to a web-accessible location
+        //    (e.g., GitHub, a file hosting service, or your own web server).
+        // 2. Replace the placeholder paths below with your file URLs.
+
+        const mtlPath = './webvis.mtl'; // <-- REPLACE THIS
+        const objPath = './webvis.obj'; // <-- REPLACE THIS
+        
+        // Show a message if the paths haven't been changed
+        if (mtlPath === 'path/to/your/model.mtl') {
+             loadingIndicator.innerHTML = `
+                <div class="text-center">
+                    <div class="font-bold text-lg text-slate-800">Ready to load your model!</div>
+                    <p class="text-slate-600 mt-2">Please edit the <code>mtlPath</code> and <code>objPath</code> variables in this file's JavaScript to load your <code>.obj</code> and <code>.mtl</code> files.</p>
+                </div>
+            `;
+        }
+
+        mtlLoader.load(mtlPath, (materials) => {
+            materials.preload();
+            objLoader.setMaterials(materials);
+            
+            objLoader.load(objPath, (object) => {
+                // The 'object' is a THREE.Group containing your model's meshes
+                
+                // --- Optional: Auto-center and scale the model ---
+                // This is helpful as models can be at any position or scale
+                const box = new THREE.Box3().setFromObject(object);
+                const center = box.getCenter(new THREE.Vector3());
+                const size = box.getSize(new THREE.Vector3());
+                
+                // Rescale to a reasonable size
+                const maxDim = Math.max(size.x, size.y, size.z);
+                const scale = 20 / maxDim; // We want it to be ~20 units big
+                object.scale.set(scale, scale, scale);
+                
+                // Move to origin
+                object.position.sub(center.multiplyScalar(scale));
+                // --- End of auto-center ---
+                
+                scene.add(object);
+                loadedModel = object; // Store for access in animate()
+                
+                // Hide loading indicator
+                loadingIndicator.style.display = 'none';
+                
+            }, 
+            (xhr) => {
+                // Called while loading is progressing
+                const percentLoaded = (xhr.loaded / xhr.total) * 100;
+                if (loadingIndicator.style.display !== 'none' && mtlPath !== 'path/to/your/model.mtl') {
+                    loadingIndicator.innerHTML = `<div class="text-slate-700 font-semibold">Loading... ${Math.round(percentLoaded)}%</div>`;
+                }
+            }, 
+            (error) => {
+                // Called when loading fails
+                console.error('An error happened during .obj loading', error);
+                if (mtlPath !== 'path/to/your/model.mtl') {
+                    loadingIndicator.innerHTML = `<div class="text-red-600 font-semibold text-center">Error loading model. Check console (F12) and file paths.</div>`;
+                }
+            });
+            
+        }, 
+        (xhr) => {
+             // Called while loading .mtl is progressing
+             if (mtlPath !== 'path/to/your/model.mtl') {
+                loadingIndicator.innerHTML = `<div class="text-slate-700 font-semibold">Loading materials...</div>`;
+             }
+        },
+        (error) => {
+            // Called when .mtl loading fails
+            console.error('An error happened during .mtl loading', error);
+            if (mtlPath !== 'path/to/your/model.mtl') {
+                loadingIndicator.innerHTML = `<div class="text-red-600 font-semibold text-center">Error loading materials. Check console (F12) and file paths.</div>`;
+            }
+        });
+
+
+        // ======== 4. Controls ========
+        
+        // OrbitControls: Allows mouse interaction (orbit, zoom, pan)
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true; // Adds a smooth "coasting" effect
+        controls.dampingFactor = 0.05;
+        controls.screenSpacePanning = false;
+        controls.minDistance = 5;  // Adjusted min distance
+        controls.maxDistance = 100; // Don't let user get too far
+
+        // ======== 5. The Animation Loop ========
+        
+        // This function is called 60 times per second to re-render the scene
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Gently rotate the model on its own, if it has loaded
+            if (loadedModel) {
+                loadedModel.rotation.y += 0.003;
+            }
+
+            // Update the controls (needed for damping)
+            controls.update();
+
+            // Render the final scene from the camera's perspective
+            renderer.render(scene, camera);
+        }
+
+        // Start the animation loop!
+        animate();
+
+        // ======== 6. Handle Window Resizing ========
+
+        function onWindowResize() {
+            // Get the new dimensions of the container
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            // Update the camera's aspect ratio
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+
+            // Update the renderer's size
+            renderer.setSize(width, height);
+        }
+
+        // Listen for resize events on the window
+        window.addEventListener('resize', onWindowResize);
+        
+    </script>
+
+</body>
+</html>
+
