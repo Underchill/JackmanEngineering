@@ -139,7 +139,7 @@
         scene.add(ambientLight);
 
         // Directional Light: Shines from a specific direction (like the sun)
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.2);
         directionalLight.position.set(10, 20, 10);
         scene.add(directionalLight);
 
@@ -149,8 +149,8 @@
 
         const mtlLoader = new THREE.MTLLoader();
         const objLoader = new THREE.OBJLoader();
-        const mtlPath = './fakeflange.mtl'; // <-- REPLACE THIS
-        const objPath = './fakeflange.obj'; // <-- REPLACE THIS
+        const mtlPath = './webvis.mtl'; // <-- REPLACE THIS
+        const objPath = './webvis.obj'; // <-- REPLACE THIS
         
         mtlLoader.load(mtlPath, (materials) => {
             materials.preload();
@@ -224,7 +224,7 @@
 
             // Gently rotate the model on its own, if it has loaded
             if (loadedModel) {
-                loadedModel.rotation.y += 0.003;
+                loadedModel.rotation.y += 0.0003;
             }
 
             // Update the controls (needed for damping)
