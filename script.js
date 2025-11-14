@@ -10,7 +10,7 @@
         let scene, camera, renderer, controls, clock;
         let modelGroup; // A THREE.Group to hold all 7 model parts
         let loadedModels = []; // To store references to the loaded models and their data
-
+        const textureLoader = new THREE.TextureLoader(); // <-- ADD THIS
         // --- Animation State ---
         let animationState = {
             isAssembled: false, // Is the model currently assembled?
@@ -38,7 +38,7 @@
             startPos: { x: 0, y: 13, z: 0 }, 
             endPos: { x: 0, y: 0, z: 0 } },
 
-            { id: 'part3', obj: './PARTS/topHW.obj', materialKey: 'hardwareMetallic',
+            { id: 'part3', obj: './PARTS/topHW.obj', materialKey: 'matMetallic',
             startPos: { x: 0, y: 2, z: 0 }, 
             endPos: { x: 0, y: 0, z: 0 } },
 
@@ -50,7 +50,7 @@
             startPos: { x: 0, y: 7, z: 0 }, 
             endPos: { x: 0, y: 0, z: 0 } },
 
-            { id: 'part5', obj: './PARTS/bottomHW.obj', materialKey: 'hardwareMetallic',
+            { id: 'part5', obj: './PARTS/bottomHW.obj', materialKey: 'matMetallic',
             startPos: { x: 0, y: -1, z: 0 }, 
             endPos: { x: 0, y: 0, z: 0 } },
 
@@ -64,8 +64,7 @@
         function init() {
             // 1. Scene
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0xe0e0e0); // Light grey background
-
+            
             // 2. Clock (for animation timing)
             clock = new THREE.Clock();
 
@@ -75,6 +74,7 @@
             const near = 0.1;
             const far = 1000;
             camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+
             // Raised camera position
             camera.position.set(0, 20, 50);
 
@@ -83,22 +83,43 @@
             renderer.setSize(canvasContainer.clientWidth, canvasContainer.clientHeight);
             renderer.setPixelRatio(window.devicePixelRatio);
             renderer.shadowMap.enabled = true;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
 
-            // 5. Lighting
-            // Ambient Light: Illuminates all objects in the scene equally
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
             scene.add(ambientLight);
-
-            // Directional Light: Shines from a specific direction (like the sun)
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.2);
-            directionalLight.position.set(10, 20, 10);
-            scene.add(directionalLight);
 
             // 6. Controls
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.target.set(0, 0, 0); // Point controls at the center of the action
             controls.update();
             controls.enableDamping = true; // Smooths out the camera movement
+
+            // reflection mapping
+
+            new THREE.RGBELoader()
+                .setPath('https://threejs.org/examples/textures/equirectangular/')
+                .load('royal_esplanade_1k.hdr', function (texture) {
+
+                    texture.mapping = THREE.EquirectangularReflectionMapping;
+
+                    // 1. Create the PMREMGenerator
+                    const pmremGenerator = new THREE.PMREMGenerator(renderer);
+
+                    // 2. Process the texture into an optimized environment map
+                    const envMap = pmremGenerator.fromEquirectangular(texture).texture;
+
+                    // 3. Set the blurred background
+                    scene.background = envMap;
+                    scene.backgroundBlurriness = 0.5; // <-- As requested
+
+                    // 4. Set the environment for all reflections
+                    scene.environment = envMap;
+                    scene.background = new THREE.Color(0x727272);
+                    // 5. Clean up the generator and original texture
+                    pmremGenerator.dispose();
+                    texture.dispose();
+
+                });
 
             // 7. Model Group
             modelGroup = new THREE.Group();
@@ -128,13 +149,13 @@
                 }),
                 matRed: new THREE.MeshStandardMaterial({ 
                     color: 0xdc2626,  // Strong Red
-                    roughness: 0.4, 
-                    metalness: 0.1 
+                    roughness: 1, 
+                    metalness: .1 
                 }),
                 matGreen: new THREE.MeshStandardMaterial({ 
                     color: 0x16a34a,  // Clear Green
-                    roughness: 0.4, 
-                    metalness: 0.1 
+                    roughness: 1, 
+                    metalness: .1 
                 }),
                 matBlueO: new THREE.MeshStandardMaterial({ 
                     color: 0x0047AB,  // o ring Blue
@@ -143,39 +164,44 @@
                 }),
                 matBlue: new THREE.MeshStandardMaterial({ 
                     color: 0x2563eb,  // Primary Blue
-                    roughness: 0.4, 
-                    metalness: 0.1 
+                    roughness: 1, 
+                    metalness: .3
                 }),
                 matYellow: new THREE.MeshStandardMaterial({ 
                     color: 0xeab308,  // Strong Yellow
-                    roughness: 0.4, 
-                    metalness: 0.1 
+                    roughness: 1, 
+                    metalness: .1 
                 }),
                 matOrange: new THREE.MeshStandardMaterial({ 
                     color: 0xea580c,  // Bright Orange
-                    roughness: 0.4, 
-                    metalness: 0.1 
+                    roughness: 1, 
+                    metalness: .1 
                 }),
                 matPurple: new THREE.MeshStandardMaterial({ 
                     color: 0x9333ea,  // Vibrant Purple
-                    roughness: 0.4, 
-                    metalness: 0.1 
+                    roughness: 1, 
+                    metalness: 0 
                 }),
                 matWhite: new THREE.MeshStandardMaterial({ 
                     color: 0xf5f5f5,  // Off-White
-                    roughness: 0.4, 
-                    metalness: 0.1 
+                    roughness: 1, 
+                    metalness: .1 
                 }),
                 matBlack: new THREE.MeshStandardMaterial({ 
                     color: 0x333333,  // Dark Graphite
-                    roughness: 0.4, 
-                    metalness: 0.1 
+                    roughness: 1, 
+                    metalness: .1 
                 }),
 
                 matMetallic: new THREE.MeshStandardMaterial({ 
                     color: 0xa1a1aa,  // Neutral Metallic (Zinc-400)
                     roughness: 0.2,   // Shiny
                     metalness: 0.9    // Very metallic
+                }),
+                matChrome: new THREE.MeshStandardMaterial({
+                    color: 0xffffff,  // White, to reflect light purely
+                    metalness: 1.0,   // 100% metallic
+                    roughness: 0.0,   // 0% rough (perfectly smooth)
                 })
             };
 
