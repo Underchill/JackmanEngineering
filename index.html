@@ -37,7 +37,7 @@
         }
     </style>
 </head>
-<body class="font-sans bg-slate-100 min-h-screen flex items-center justify-center p-4">
+<body class="font-sans bg-slate-100 min-h-screen flex items-start md:items-center justify-center p-4">
 
     <!-- 
       Main card container.
@@ -45,7 +45,7 @@
       Stacks vertically on mobile (flex-col) and sits side-by-side on desktop (md:flex-row).
       Grows to fill more of the screen.
     -->
-    <div class="bg-white shadow-xl rounded-lg w-full h-full max-w-full overflow-hidden flex flex-col md:flex-row" style="height: calc(100vh - 2rem); max-height: 1200px;">
+    <div class="bg-white shadow-xl rounded-lg w-full max-w-full overflow-hidden flex flex-col md:flex-row md:h-[calc(100vh-2rem)] md:max-h-[1200px]">
 
         <!-- 
           Column 1: Canvas Container
@@ -74,7 +74,7 @@
           Uses flex-col to allow text area to grow and scroll.
           Added flex-grow and flex-shrink to allow flexible sizing on mobile.
         -->
-        <div classs="w-full md:w-2/5 flex flex-col min-h-[200px] md:h-full flex-grow flex-shrink">
+        <div class="w-full md:w-2/5 flex flex-col min-h-[200px] md:h-full flex-grow flex-shrink">
             <!-- This inner div adds padding and handles the scrolling content -->
             <div class="p-6 md:p-8 flex flex-col h-full">
                 <h2 class="text-xl font-semibold text-slate-700 mb-4 flex-shrink-0">Jackman Engineering Telescopic Toilet Flange</h2>
