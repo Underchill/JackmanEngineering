@@ -3,260 +3,436 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telescoping Toilet Flange 3D Visualizer</title>
-    
-    <!-- 1. Load Tailwind CSS for styling -->
-    <!-- Added ?plugins=typography for prose text styling -->
-    <script src="https://cdn.tailwindcss.com/"></script>
-    
-    <!-- 2. Load three.js (the 3D library) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    
-    <!-- 3. Load OrbitControls (for mouse interaction) -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    
-    <!-- 4. Load MTLLoader (for .mtl materials) -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/MTLLoader.js"></script>
-    <!-- 5. Load OBJLoader (for .obj geometry) -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
-    
-    <style>
-        /* Use the Inter font, as per instructions */
-        body {
-            font-family: 'Inter', sans-serif;
+    <title>JJ</title>
+    <!-- 
+      Load Tailwind CSS for styling.
+      The typography plugin is added for nice text formatting.
+    -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                },
+            },
         }
-        /* Ensure the canvas is a block element to prevent layout issues */
-        canvas {
-            display: block;
+    </script>
+    <!-- Load three.js (core library) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Load OrbitControls (for mouse/touch rotation) -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- Loaders for .obj and .mtl files -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/MTLLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+    <style>
+        /* Custom style for the canvas to ensure it resizes correctly */
+        #three-canvas {
             width: 100%;
             height: 100%;
-        }
-        /* Make html and body take full height */
-        html, body {
-            /* height: 100%; */ /* Removed to allow content to define height */
-            margin: 0;
-            /* overflow: hidden; */ /* Removed to allow scrolling if needed */
+            display: block;
         }
     </style>
 </head>
-<!-- Changed classes: Removed centering, added padding and flex-col -->
-<body class="bg-slate-100 p-4 md:p-8 font-sans min-h-screen flex flex-col">
+<body class="font-sans bg-slate-100 min-h-screen flex items-center justify-center p-4">
 
-    <!-- Main content card -->
-    <!-- Changed classes: Removed w-11/12, max-w-6xl, max-h-[90vh]. Added w-full and flex-grow -->
-    <div class="bg-white rounded-xl shadow-2xl p-6 md:p-8 w-full flex-grow flex flex-col">
-        
-        <!-- Header -->
-        <div class="flex-shrink-0">
-            <h1 class="text-2xl md:text-3xl font-bold text-slate-800">Telescoping Toilet Flange 3D Visualizer</h1>
+    <!-- 
+      Main card container.
+      Flex layout to create columns.
+      Stacks vertically on mobile (flex-col) and sits side-by-side on desktop (md:flex-row).
+      Grows to fill more of the screen.
+    -->
+    <div class="bg-white shadow-xl rounded-lg w-full h-full max-w-full overflow-hidden flex flex-col md:flex-row" style="height: calc(100vh - 2rem); max-height: 1200px;">
+
+        <!-- 
+          Column 1: Canvas Container
+          Takes 60% of width on desktop, full width on mobile.
+          min-h-[50vh] (mobile) for more vertical space, md:min-h-0 (desktop).
+          Added flex-grow and flex-shrink to allow flexible sizing on mobile.
+        -->
+        <div id="canvas-container" class="w-full md:w-3/5 rounded-lg overflow-hidden bg-slate-200 relative min-h-[50vh] md:min-h-0 flex-grow flex-shrink">
+            <!-- This is the canvas our 3D scene will be rendered into -->
+            <canvas id="three-canvas"></canvas>
+
+            <!-- Loading Indicator -->
+            <div id="loading-indicator" class_comment_section_id="loading-indicator" class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-200 bg-opacity-90 transition-opacity duration-300">
+                <div class="text-slate-700 text-lg font-medium">Loading 3D Models...</div>
+                <div id="loading-progress" class="text-slate-600 text-sm mt-2">0%</div>
+                <div class="w-3/4 max-w-sm bg-slate-300 rounded-full h-2.5 mt-4">
+                    <div id="loading-bar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+                </div>
+                <p class="mt-4 text-xs text-slate-500 text-center px-4">Loading 7 model parts. Please wait.</p>
+            </div>
         </div>
 
         <!-- 
-          NEW: Content container for columns 
-          This stacks on mobile (flex-col) and goes side-by-side on desktop (md:flex-row)
-          min-h-0 prevents flexbox overflow issues
+          Column 2: Text Box
+          Takes 40% of width on desktop, full width on mobile.
+          Uses flex-col to allow text area to grow and scroll.
+          Added flex-grow and flex-shrink to allow flexible sizing on mobile.
         -->
-        <div class="flex-grow flex flex-col md:flex-row mt-6 gap-6 min-h-0">
-
-            <!-- 
-              Column 1: Canvas Container
-              Takes 60% of width on desktop, full width on mobile.
-              min-h-[50vh] (mobile) for more vertical space, md:min-h-0 (desktop).
-              Added flex-grow and flex-shrink to allow flexible sizing on mobile.
-            -->
-            <div id="canvas-container" class="w-full md:w-3/5 rounded-lg overflow-hidden bg-slate-200 relative min-h-[50vh] md:min-h-0 flex-grow flex-shrink">
-                <!-- This is the canvas our 3D scene will be rendered into -->
-                <!-- The CSS 'canvas { width: 100%; height: 100% }' will make it fill this div -->
-                <canvas id="model-canvas"></canvas>
+        <div classs="w-full md:w-2/5 flex flex-col min-h-[200px] md:h-full flex-grow flex-shrink">
+            <!-- This inner div adds padding and handles the scrolling content -->
+            <div class="p-6 md:p-8 flex flex-col h-full">
+                <h2 class="text-xl font-semibold text-slate-700 mb-4 flex-shrink-0">Jackman Engineering Telescopic Toilet Flange</h2>
                 
-                <!-- Loading indicator -->
-                <div id="loading-indicator" class="absolute inset-0 flex items-center justify-center bg-slate-200 bg-opacity-80 p-4">
-                    <div class="text-slate-700 font-semibold">Loading 3D model...</div>
-                </div>
-            </div>
+                <!-- Action Button -->
+                <button id="assemble-button" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all duration-200 disabled:bg-slate-400 disabled:cursor-not-allowed mb-6 flex-shrink-0" disabled>
+                    Assemble Model
+                </button>
 
-            <!-- 
-              Column 2: Text Box
-              Takes 40% of width on desktop, full width on mobile.
-              Uses flex-col to allow text area to grow and scroll.
-              Added flex-grow and flex-shrink to allow flexible sizing on mobile.
-            -->
-            <div class="w-full md:w-2/5 flex flex-col min-h-[200px] md:h-full flex-grow flex-shrink">
-                <h2 class="text-xl font-semibold text-slate-700 mb-3 flex-shrink-0">Model Details</h2>
                 <!-- 
-                  This div holds the text. 
-                  flex-grow: makes it fill the available space in this column.
-                  overflow-y-auto: adds a scrollbar if content overflows.
-                  prose: from tailwind typography for nice text styling.
+                  Scrolling text area.
+                  'prose' class from typography plugin styles the text.
+                  'overflow-y-auto' makes this part scroll.
+                  'flex-grow' makes it fill the remaining space.
                 -->
-                <div class="prose prose-slate bg-slate-50 border border-slate-200 rounded-lg p-4 flex-grow overflow-y-auto">
+                <div class="prose prose-slate max-w-none overflow-y-auto flex-grow" style="max-height: calc(100% - 100px);">
+                    <p>This is a demonstration of an "exploded view" animation. The model is composed of hardware </p>
+                    <p>Click the "Assemble Model" button above to animate all the parts into their final, "assembled" positions. Click it again to reverse the animation and "explode" the parts back out.</p>
                     
-                    <p>Abstract</p>
-
-                    <p>A telescoping toilet mounting assembly and a method for mounting a toilet to a floor and a wastewater pipe. Hollow bolts project from clamping plates to be received through mounting holes in an upper male flange section and through mounting holes of a toilet base. Base bolt nuts are tightened onto the hollow bolts to secure the upper male flange section to the toilet base prior to lowering the toilet and the upper male flange section into engagement with a lower female flange section. Fastening bolt structures with adjustable-length body portions and threaded tips can pass through the hollow bolts and into threaded engagement with mounting members fixed to the lower female flange section fixed to the wastewater pipe and the floor. Alternatively, fastening bolts pass through the hollow bolts and into threaded engagement with upstanding registration and locking rods retained relative to the lower female flange section.</p>
+                    <p>A telescoping toilet mounting assembly and a method for mounting a toilet to a floor and a wastewater pipe. Hollow bolts project from clamping plates to be received through mounting holes in an upper male flange section and through mounting holes of a toilet base. Base bolt nuts are tightened onto the hollow bolts to secure the upper male flange section to the toilet base prior to lowering the toilet and the upper male flange section into engagement with a lower female flange section. </p>
+                    <h4>Identification of parts by color</h4>
+                    <ul>
+                        <li>Orange: Post installation protective plug</li>
+                        <li>Green: Male flange, this part is glued to the toilet</li>
+                        <li>Orange: Female flange, this part is glued to the drain</li>
+                    </ul>
+                    <p>Fastening bolt structures with adjustable-length body portions and threaded tips can pass through the hollow bolts and into threaded engagement with mounting members fixed to the lower female flange section fixed to the wastewater pipe and the floor. Alternatively, fastening bolts pass through the hollow bolts and into threaded engagement with upstanding registration and locking rods retained relative to the lower female flange section.</p>
                 </div>
             </div>
+        </div>
 
-        </div> <!-- End of columns container -->
+    </div>
 
-    </div> <!-- End of main card -->
-
-    <!-- The JavaScript for setting up the 3D scene -->
     <script type="module">
-        // Find the canvas and its container
-        const canvas = document.getElementById('model-canvas');
-        const container = document.getElementById('canvas-container');
+        // Get references to our DOM elements
+        const canvasContainer = document.getElementById('canvas-container');
+        const canvas = document.getElementById('three-canvas');
         const loadingIndicator = document.getElementById('loading-indicator');
+        const loadingBar = document.getElementById('loading-bar');
+        const loadingProgress = document.getElementById('loading-progress');
+        const assembleButton = document.getElementById('assemble-button');
 
-        // ======== 1. Core Three.js Components ========
+        // --- Core 3D Scene Variables ---
+        let scene, camera, renderer, controls, clock;
+        let modelGroup; // A THREE.Group to hold all 7 model parts
+        let loadedModels = []; // To store references to the loaded models and their data
+
+        // --- Animation State ---
+        let animationState = {
+            isAssembled: false, // Is the model currently assembled?
+            isAnimating: false, // Is an animation in progress?
+            progress: 0.0,      // Animation progress (0.0 = exploded, 1.0 = assembled)
+            duration: 2.0,      // Duration of the animation in seconds
+        };
         
-        // Scene: This is the container for all our 3D objects
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x858585); // Match page background
+        // --- Model Definitions ---
+        // - 'id': A unique name for the part.
+        // - 'mtl': The path to the .mtl file (e.g., './part1.mtl')
+        // - 'obj': The path to the .obj file (e.g., './part1.obj')
+        // - 'startPos': The "exploded" position { x, y, z }
+        // - 'endPos': The "assembled" position { x, y, z }
+        const modelDefs = [
+            { id: 'part1', obj: './PARTS/plug.obj', materialKey: 'matYellow',
+            startPos: { x: 0, y: 12, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
 
-        // new THREE.PerspectiveCamera(FieldOfView, AspectRatio, NearClip, FarClip)
-        const camera = new THREE.PerspectiveCamera(
-            75, // Field of view
-            container.clientWidth / container.clientHeight, // Aspect ratio
-            0.1, // Near clipping plane
-            1000 // Far clipping plane
-        );
-        // Move the camera back so we can see the model
-        camera.position.set(0, 10, 30);
+            { id: 'part1', obj: './PARTS/plugO.obj', materialKey: 'matBlueO',
+            startPos: { x: 0, y: 12, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
 
-        // Renderer: This draws the scene onto the canvas
-        const renderer = new THREE.WebGLRenderer({ 
-            canvas: canvas, 
-            antialias: true // Makes edges look smoother
-        });
-        renderer.setSize(container.clientWidth, container.clientHeight);
-        renderer.setPixelRatio(window.devicePixelRatio); // For sharp rendering on high-DPI screens
+            { id: 'part2', obj: './PARTS/nuts.obj', materialKey: 'matMetallic',
+            startPos: { x: 0, y: 15, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
 
-        // ======== 2. Lights ========
-        
-        // Ambient Light: Illuminates all objects in the scene equally
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-        scene.add(ambientLight);
+            { id: 'part3', obj: './PARTS/topHW.obj', materialKey: 'hardwareMetallic',
+            startPos: { x: 0, y: 4, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
 
-        // Directional Light: Shines from a specific direction (like the sun)
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.2);
-        directionalLight.position.set(10, 20, 10);
-        scene.add(directionalLight);
+            { id: 'part4', obj: './PARTS/maleFlange.obj', materialKey: 'matOrange',
+            startPos: { x: 0, y: 7, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
 
-        // ======== 3. Load the .OBJ Model ========
-        
-        let loadedModel;
+            { id: 'part4', obj: './PARTS/maleFlangeO.obj', materialKey: 'matBlueO',
+            startPos: { x: 0, y: 7, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
 
-        const mtlLoader = new THREE.MTLLoader();
-        const objLoader = new THREE.OBJLoader();
-        const mtlPath = './webvis.mtl'; // <-- REPLACE THIS
-        const objPath = './webvis.obj'; // <-- REPLACE THIS
-        
-        mtlLoader.load(mtlPath, (materials) => {
-            materials.preload();
-            objLoader.setMaterials(materials);
-            
-            objLoader.load(objPath, (object) => {
-                // The 'object' is a THREE.Group containing your model's meshes
-                
-                // --- Optional: Auto-center and scale the model ---
-                // This is helpful as models can be at any position or scale
-                const box = new THREE.Box3().setFromObject(object);
-                const center = box.getCenter(new THREE.Vector3());
-                const size = box.getSize(new THREE.Vector3());
-                
-                // Rescale to a reasonable size
-                const maxDim = Math.max(size.x, size.y, size.z);
-                const scale = 20 / maxDim; // We want it to be ~20 units big
-                object.scale.set(scale, scale, scale);
-                
-                // Move to origin
-                object.position.sub(center.multiplyScalar(scale));
-                // --- End of auto-center ---
-                
-                scene.add(object);
-                loadedModel = object; // Store for access in animate()
-                
-                // Hide loading indicator
-                loadingIndicator.style.display = 'none';
-                
-            }, 
-            (xhr) => {
-                // Called while loading is progressing
-                const percentLoaded = (xhr.loaded / xhr.total) * 100;
-                if (loadingIndicator.style.display !== 'none' && mtlPath !== 'path/to/your/model.mtl') {
-                    loadingIndicator.innerHTML = `<div class="text-slate-700 font-semibold">Loading... ${Math.round(percentLoaded)}%</div>`;
-                }
-            }, 
-            (error) => {
-                // Called when loading fails
-                console.error('An error happened during .obj loading', error);
-                loadingIndicator.innerHTML = `<div class="text-red-600 font-semibold text-center">An error happened during .obj loading.</div>`;
-            });
-            
-        }, 
-        (xhr) => {
-             // Called while loading .mtl is progressing
-             loadingIndicator.innerHTML = `<div class="text-slate-700 font-semibold">Loading materials...</div>`;
-        },
-        (error) => {
-            // Called when .mtl loading fails
-            console.error('An error happened during .mtl loading', error);
-             loadingIndicator.innerHTML = `<div class="text-red-600 font-semibold">Error loading materials...</div>`;
-        });
+            { id: 'part5', obj: './PARTS/bottomHW.obj', materialKey: 'hardwareMetallic',
+            startPos: { x: 0, y: 0, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+
+            { id: 'part6', obj: './PARTS/femaleFlange.obj', materialKey: 'matBlue',
+            startPos: { x: 0, y: -5, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+        ];
 
 
-        // ======== 4. Controls ========
-        
-        // OrbitControls: Allows mouse interaction (orbit, zoom, pan)
-        const controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true; // Adds a smooth "coasting" effect
-        controls.dampingFactor = 0.05;
-        controls.screenSpacePanning = false;
-        controls.minDistance = 5;  // Adjusted min distance
-        controls.maxDistance = 100; // Don't let user get too far
+        // --- Initialize the 3D Scene ---
+        function init() {
+            // 1. Scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xe0e0e0); // Light grey background
 
-        // ======== 5. The Animation Loop ========
-        
-        // This function is called 60 times per second to re-render the scene
-        function animate() {
-            requestAnimationFrame(animate);
+            // 2. Clock (for animation timing)
+            clock = new THREE.Clock();
 
-            // Gently rotate the model on its own, if it has loaded
-            if (loadedModel) {
-                loadedModel.rotation.y += 0.0003;
-            }
+            // 3. Camera
+            const fov = 45;
+            const aspect = canvasContainer.clientWidth / canvasContainer.clientHeight;
+            const near = 0.1;
+            const far = 1000;
+            camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+            // Raised camera position
+            camera.position.set(0, 20, 50);
 
-            // Update the controls (needed for damping)
+            // 4. Renderer
+            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+            renderer.setSize(canvasContainer.clientWidth, canvasContainer.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.shadowMap.enabled = true;
+
+            // 5. Lighting
+            // Ambient Light: Illuminates all objects in the scene equally
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            // Directional Light: Shines from a specific direction (like the sun)
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.2);
+            directionalLight.position.set(10, 20, 10);
+            scene.add(directionalLight);
+
+            // 6. Controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.target.set(0, 0, 0); // Point controls at the center of the action
             controls.update();
+            controls.enableDamping = true; // Smooths out the camera movement
 
-            // Render the final scene from the camera's perspective
-            renderer.render(scene, camera);
+            // 7. Model Group
+            modelGroup = new THREE.Group();
+            scene.add(modelGroup);
+
+            // 8. Load Models
+            loadAllModels();
+
+            // 9. Event Listeners
+            window.addEventListener('resize', onWindowResize);
+            assembleButton.addEventListener('click', toggleAssemble);
         }
 
-        // Start the animation loop!
-        animate();
+        // --- Load All Models ---
+        // --- Load All Models ---
+        function loadAllModels() {
+            const manager = new THREE.LoadingManager();
+            const objLoader = new THREE.OBJLoader(manager);
 
-        // ======== 6. Handle Window Resizing ========
+            // --- Define our custom materials ---
+            const materials = {
+                // A bright, metallic finish for all hardware
+                hardwareMetallic: new THREE.MeshStandardMaterial({ 
+                    color: 0x808080,  // Neutral Metallic Grey
+                    roughness: 0.2,   // Shiny
+                    metalness: 0.9    // Very metallic
+                }),
+                matRed: new THREE.MeshStandardMaterial({ 
+                    color: 0xdc2626,  // Strong Red
+                    roughness: 0.4, 
+                    metalness: 0.1 
+                }),
+                matGreen: new THREE.MeshStandardMaterial({ 
+                    color: 0x16a34a,  // Clear Green
+                    roughness: 0.4, 
+                    metalness: 0.1 
+                }),
+                matBlueO: new THREE.MeshStandardMaterial({ 
+                    color: 0x0047AB,  // o ring Blue
+                    roughness: 0.4, 
+                    metalness: 0.1 
+                }),
+                matBlue: new THREE.MeshStandardMaterial({ 
+                    color: 0x2563eb,  // Primary Blue
+                    roughness: 0.4, 
+                    metalness: 0.1 
+                }),
+                matYellow: new THREE.MeshStandardMaterial({ 
+                    color: 0xeab308,  // Strong Yellow
+                    roughness: 0.4, 
+                    metalness: 0.1 
+                }),
+                matOrange: new THREE.MeshStandardMaterial({ 
+                    color: 0xea580c,  // Bright Orange
+                    roughness: 0.4, 
+                    metalness: 0.1 
+                }),
+                matPurple: new THREE.MeshStandardMaterial({ 
+                    color: 0x9333ea,  // Vibrant Purple
+                    roughness: 0.4, 
+                    metalness: 0.1 
+                }),
+                matWhite: new THREE.MeshStandardMaterial({ 
+                    color: 0xf5f5f5,  // Off-White
+                    roughness: 0.4, 
+                    metalness: 0.1 
+                }),
+                matBlack: new THREE.MeshStandardMaterial({ 
+                    color: 0x333333,  // Dark Graphite
+                    roughness: 0.4, 
+                    metalness: 0.1 
+                }),
 
+                matMetallic: new THREE.MeshStandardMaterial({ 
+                    color: 0xa1a1aa,  // Neutral Metallic (Zinc-400)
+                    roughness: 0.2,   // Shiny
+                    metalness: 0.9    // Very metallic
+                })
+            };
+
+            let modelsLoaded = 0;
+            const totalModels = modelDefs.length;
+
+            // LoadingManager callbacks
+            manager.onStart = function (url, itemsLoaded, itemsTotal) {
+                console.log('Started loading models...');
+            };
+
+            manager.onProgress = function (url, itemsLoaded, itemsTotal) {
+                // This tracks internal files, so we'll use our custom progress below
+            };
+
+            manager.onLoad = function () {
+                console.log('All models loaded!');
+                loadingIndicator.style.opacity = '0'; // Fade out
+                setTimeout(() => loadingIndicator.style.display = 'none', 300); // Hide after fade
+                assembleButton.disabled = false; // Enable the button
+            };
+
+            manager.onError = function (url) {
+                console.error('There was an error loading ' + url);
+                loadingIndicator.innerText = 'Error loading model. Check console.';
+            };
+
+            // --- Loop over model definitions and load each one ---
+            modelDefs.forEach(modelDef => {
+                // Get the correct material for this model
+                const material = materials[modelDef.materialKey];
+
+                objLoader.setPath('./'); // Assume files are in the same directory
+                objLoader.load(modelDef.obj, function (object) {
+                    
+                    // Set the model's initial (exploded) position
+                    object.position.set(modelDef.startPos.x, modelDef.startPos.y, modelDef.startPos.z);
+                    
+                    // --- Apply our custom material ---
+                    object.traverse(function (child) {
+                        if (child.isMesh) {
+                            child.material = material; // Assign the material
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+                        }
+                    });
+
+                    // Add to our group and store the reference
+                    modelGroup.add(object);
+                    loadedModels.push({
+                        id: modelDef.id,
+                        object: object,
+                        startPos: new THREE.Vector3(modelDef.startPos.x, modelDef.startPos.y, modelDef.startPos.z),
+                        endPos: new THREE.Vector3(modelDef.endPos.x, modelDef.endPos.y, modelDef.endPos.z)
+                    });
+
+                    // Update custom progress bar
+                    modelsLoaded++;
+                    const progress = (modelsLoaded / totalModels) * 100;
+                    loadingBar.style.width = progress + '%';
+                    loadingProgress.innerText = `${Math.round(progress)}%`;
+
+                }, undefined, function (error) {
+                    console.error(`Error loading OBJ ${modelDef.obj}:`, error);
+                });
+            });
+        }
+
+
+        // --- Handle Button Click ---
+        function toggleAssemble() {
+            if (animationState.isAnimating) return; // Don't do anything if already moving
+
+            animationState.isAnimating = true;
+            animationState.isAssembled = !animationState.isAssembled; // Flip the state
+            
+            // Update button text
+            assembleButton.innerText = animationState.isAssembled ? 'Explode Model' : 'Assemble Model';
+        }
+
+        // --- Handle Window Resize ---
         function onWindowResize() {
-            // Get the new dimensions of the container
-            const width = container.clientWidth;
-            const height = container.clientHeight;
+            const width = canvasContainer.clientWidth;
+            const height = canvasContainer.clientHeight;
 
-            // Update the camera's aspect ratio
             camera.aspect = width / height;
             camera.updateProjectionMatrix();
 
-            // Update the renderer's size
             renderer.setSize(width, height);
         }
 
-        // Listen for resize events on the window
-        window.addEventListener('resize', onWindowResize);
-        
-    </script>
+        // --- Easing Function (for smooth start/end) ---
+        function easeInOutCubic(t) {
+            return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        }
 
+        // --- Animation Loop (called every frame) ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const delta = clock.getDelta(); // Time since last frame
+
+            // --- Handle Assembly/Explode Animation ---
+            if (animationState.isAnimating) {
+                // Move progress forward or backward
+                if (animationState.isAssembled) {
+                    animationState.progress += delta / animationState.duration; // Assemble
+                } else {
+                    animationState.progress -= delta / animationState.duration; // Explode
+                }
+
+                // Clamp progress between 0.0 and 1.0
+                animationState.progress = Math.max(0, Math.min(1, animationState.progress));
+                
+                // Apply easing
+                const easedProgress = easeInOutCubic(animationState.progress);
+
+                // Update position of each model
+                loadedModels.forEach(model => {
+                    model.object.position.lerpVectors(model.startPos, model.endPos, easedProgress);
+                });
+
+                // Check if animation is finished
+                if ((animationState.isAssembled && animationState.progress === 1.0) ||
+                    (!animationState.isAssembled && animationState.progress === 0.0)) {
+                    animationState.isAnimating = false;
+                }
+            }
+
+            // --- Handle idle rotation ---
+            // Only rotate if *not* animating, to avoid weird motion
+            if (!animationState.isAnimating) {
+                 modelGroup.rotation.y += 0.1 * delta;
+            }
+
+            // Update controls
+            controls.update();
+
+            // Render the scene
+            renderer.render(scene, camera);
+        }
+
+        // --- Start Everything ---
+        init();
+        animate();
+
+    </script>
 </body>
 </html>
-
