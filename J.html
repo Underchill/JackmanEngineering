@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D File Viewer Tabs (Async)</title>
+
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        h2 {
+            padding: 10px 20px;
+            margin: 0;
+            background-color: #e9e9e9;
+        }
+
+        .tab-bar {
+            overflow: hidden;
+            background-color: #333;
+            border-bottom: 3px solid #555;
+        }
+
+        .tab-bar button {
+            background-color: inherit;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 14px 18px;
+            transition: 0.3s;
+            font-size: 17px;
+            color: white;
+        }
+
+        .tab-bar button:hover {
+            background-color: #555;
+        }
+
+        .tab-bar button.active {
+            background-color: #007bff;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 10px;
+            border-top: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+
+        .viewer-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .canvas-container {
+            width: 100%;
+            height: 60vh;
+            background-color: #222222;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .canvas-container canvas {
+            width: 100% !important;
+            height: 100% !important;
+            display: block;
+        }
+
+        .info-pane {
+            width: 100%;
+            background-color: #ffffff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            box-sizing: border-box;
+            max-height: 40vh;
+            overflow-y: auto;
+        }
+        
+        .info-pane h3 {
+            margin-top: 0;
+            color: #007bff;
+        }
+
+        @media (min-width: 768px) {
+            .viewer-layout {
+                flex-direction: row;
+                height: 75vh;
+            }
+
+            .canvas-container {
+                flex: 0 0 65%;
+                height: 100%;
+            }
+
+            .info-pane {
+                flex: 1 1 35%;
+                height: 100%;
+                max-height: 100%; 
+                overflow-y: auto;
+            }
+        }
+        .btn-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap; /* Allow buttons to stack on small screens */
+        }
+
+        .animate-btn, .reset-btn {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: white;
+            flex-grow: 1; /* Allow buttons to share space */
+            min-width: 100px; /* Prevent them from getting too small */
+        }
+
+        .animate-btn {
+            background-color: #007bff;
+        }
+        .animate-btn:hover {
+            background-color: #0056b3;
+        }
+
+        .reset-btn {
+            background-color: #6c757d;
+        }
+        .reset-btn:hover {
+            background-color: #5a6268;
+        }
+    </style>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.min.js",
+            "three/examples/jsm/controls/OrbitControls.js": "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/controls/OrbitControls.js",
+            "three/examples/jsm/loaders/OBJLoader.js": "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/OBJLoader.js",
+            "three/examples/jsm/loaders/RGBELoader.js": "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/RGBELoader.js"
+        }
+    }
+    </script>
+
+</head>
+<body>
+
+    <h2>3D Model Viewer (Async File Loading)</h2>
+
+    <!-- The Tab Bar -->
+    <div class="tab-bar">
+        <button class="tab-link active" data-tab="Tab1">Viewer 1 (Demo)</button>
+        <button class="tab-link" data-tab="Tab2">Viewer 2 (Demo)</button>
+        <button class="tab-link" data-tab="Tab3">Viewer 3 (Demo)</button>
+    </div>
+
+    <!-- Tab 1 Content -->
+    <div id="Tab1" class="tab-content active">
+        <div class="viewer-layout">
+            <div class="canvas-container" id="canvas-container-Tab1"></div>
+            <div class="info-pane">
+                <h3>About Viewer 1</h3>
+                <p>This scene is loaded asynchronously from <strong>viewer1Defs</strong>.</p>
+                <p>The animation is controled by the start and end pos in viewerNDefs.</p> 
+                <p>Finding a better way to do this could be important</p>
+                <hr>
+                <h4>Controls:</h4>
+                <ul>
+                    <li><strong>Left-click + drag:</strong> Rotate</li>
+                    <li><strong>Right-click + drag:</strong> Pan</li>
+                    <li><strong>Mouse wheel scroll:</strong> Zoom</li>
+                </ul>
+                <div class="btn-container">
+                    <button id="animate-btn-Tab1" class="animate-btn">Animate Parts</button>
+                    <button id="reset-btn-Tab1" class="reset-btn">Reset</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab 2 Content -->
+    <div id="Tab2" class="tab-content">
+        <div class="viewer-layout">
+            <div class="canvas-container" id="canvas-container-Tab2"></div>
+            <div class="info-pane">
+                <h3>About Viewer 2</h3>
+                <p>This scene is loaded asynchronously from <strong>viewer2Defs</strong>.</p>
+                <hr>
+                <h4>Controls:</h4>
+                <ul>
+                    <li><strong>Left-click + drag:</strong> Rotate</li>
+                    <li><strong>Right-click + drag:</strong> Pan</li>
+                    <li><strong>Mouse wheel scroll:</strong> Zoom</li>
+                </ul>
+                <div class="btn-container">
+                    <button id="animate-btn-Tab2" class="animate-btn">Animate Parts</button>
+                    <button id="reset-btn-Tab2" class="reset-btn">Reset</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab 3 Content -->
+    <div id="Tab3" class="tab-content">
+        <div class="viewer-layout">
+            <div class="canvas-container" id="canvas-container-Tab3"></div>
+            <div class="info-pane">
+                <h3>About Viewer 3 (Your Data)</h3>
+                <p>This scene is loaded asynchronously from <strong>viewer3Defs</strong>.</p>
+                <hr>
+                <h4>Controls:</h4>
+                <ul>
+                    <li><strong>Left-click + drag:</strong> Rotate</li>
+                    <li><strong>Right-click + drag:</strong> Pan</li>
+                    <li><strong>Mouse wheel scroll:</strong> Zoom</li>
+                </ul>
+                <div class="btn-container">
+                    <button id="animate-btn-Tab3" class="animate-btn">Animate Parts</button>
+                    <button id="reset-btn-Tab3" class="reset-btn">Reset</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 
+      START OF JAVASCRIPT
+    -->
+<script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+        import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
+        import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
+
+        let scene, camera, renderer, controls, clock;
+        let loadedModels = [];
+        let modelGroup;
+
+
+        const MATERIALS = {
+    matYellow: new THREE.MeshStandardMaterial({
+        color: 0xffd700,
+        metalness: 0.0, // Non-metallic (like plastic or paint)
+        roughness: 0.2  // A bit glossy
+    }),
+    matBlueO: new THREE.MeshStandardMaterial({
+        color: 0x007bff,
+        metalness: 0.0, // Non-metallic (like glass or plastic)
+        roughness: 1,  // Very glossy
+        opacity: 0.7,
+        transparent: false,
+    }),
+    matMetallic: new THREE.MeshStandardMaterial({
+        color: 0xaaaaaa, // Base color for the metal
+        metalness: 1.0, // 100% metallic
+        roughness: 0.2  // Slightly brushed/worn metal
+    }),
+    matOrange: new THREE.MeshStandardMaterial({
+        color: 0xffa500,
+        metalness: 0.0,
+        roughness: 0.2
+    }),
+    matBlue: new THREE.MeshStandardMaterial({
+        color: 0x0055ff,
+        metalness: 0.0,
+        roughness: 0.2
+    }),
+    // A good, neutral default
+    default: new THREE.MeshStandardMaterial({
+        color: 0xcccccc,
+        metalness: 0.0,
+        roughness: 0.5 // A matte, plastic-like default
+    })
+};
+
+        // Demo definitions for Viewer 1
+        const viewer1Defs = [
+            { id: 'part1', obj: './PARTS/plug.obj', materialKey: 'matYellow',
+            startPos: { x: 0, y: 12, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+
+            { id: 'part1', obj: './PARTS/plugO.obj', materialKey: 'matBlueO',
+            startPos: { x: 0, y: 12, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+
+            { id: 'part2', obj: './PARTS/nuts.obj', materialKey: 'matMetallic',
+            startPos: { x: 0, y: 13, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+
+            { id: 'part3', obj: './PARTS/topHW.obj', materialKey: 'matMetallic',
+            startPos: { x: 0, y: 2, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+
+            { id: 'part4', obj: './PARTS/maleFlange.obj', materialKey: 'matOrange',
+            startPos: { x: 0, y: 7, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+
+            { id: 'part4', obj: './PARTS/maleFlangeO.obj', materialKey: 'matBlueO',
+            startPos: { x: 0, y: 7, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+
+            { id: 'part5', obj: './PARTS/bottomHW.obj', materialKey: 'matMetallic',
+            startPos: { x: 0, y: -1, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+
+            { id: 'part6', obj: './PARTS/femaleFlange.obj', materialKey: 'matBlue',
+            startPos: { x: 0, y: -5, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+        ];
+
+        // Demo definitions for Viewer 2
+        const viewer2Defs = [
+            { id: 'part1', obj: './PARTS/toilet.obj', materialKey: 'matWhite',
+            startPos: { x: 0, y: 10, z: 0 }, 
+            endPos: { x: 0, y: -1.5, z: 0 } },
+
+            { id: 'glue', obj: './PARTS/sealant.obj', materialKey: 'matBlue',
+            startPos: { x: 0, y: 8, z: 0 }, 
+            endPos: { x: 0, y: -1.5, z: 0 } },
+
+            { id: 'part2', obj: './PARTS/nuts.obj', materialKey: 'matMetallic',
+            startPos: { x: 0, y: 13, z: 0 }, 
+            endPos: { x: 0, y: 1, z: 0 } },
+
+            { id: 'part3', obj: './PARTS/topHW.obj', materialKey: 'matMetallic',
+            startPos: { x: 0, y: 2, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+
+            { id: 'part4', obj: './PARTS/maleFlange.obj', materialKey: 'matOrange',
+            startPos: { x: 0, y: 7, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+
+            { id: 'part4', obj: './PARTS/maleFlangeO.obj', materialKey: 'matBlueO',
+            startPos: { x: 0, y: 7, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+
+            { id: 'part5', obj: './PARTS/bottomHW.obj', materialKey: 'matMetallic',
+            startPos: { x: 0, y: -1, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+
+            { id: 'part6', obj: './PARTS/femaleFlange.obj', materialKey: 'matBlue',
+            startPos: { x: 0, y: -5, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+        ];
+
+        // Your definitions for Viewer 3
+        const viewer3Defs = [
+            { id: 'part1', obj: './PARTS/plugO.obj', materialKey: 'matBlueO',
+            startPos: { x: 0, y: 12, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+
+            { id: 'part2', obj: './PARTS/nuts.obj', materialKey: 'matMetallic',
+            startPos: { x: 0, y: 13, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+
+            { id: 'part3', obj: './PARTS/topHW.obj', materialKey: 'matMetallic',
+            startPos: { x: 0, y: 2, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+
+            { id: 'part4', obj: './PARTS/maleFlange.obj', materialKey: 'matOrange',
+            startPos: { x: 0, y: 7, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+
+            { id: 'part4', obj: './PARTS/maleFlangeO.obj', materialKey: 'matBlueO',
+            startPos: { x: 0, y: 7, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+
+            { id: 'part5', obj: './PARTS/bottomHW.obj', materialKey: 'matMetallic',
+            startPos: { x: 0, y: -1, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+
+            { id: 'part6', obj: './PARTS/femaleFlange.obj', materialKey: 'matBlue',
+            startPos: { x: 0, y: -5, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+        ];
+
+        const initializedViewers = {};
+        const activeViewers = {};
+
+        function createScene(container) {
+            scene = new THREE.Scene();
+            clock = new THREE.Clock();
+
+            scene.background = new THREE.Color(0x222222);
+            const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(0, 20, 50);
+
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.shadowMap.enabled = true; // Added shadowMap
+            container.appendChild(renderer.domElement);
+            renderer.toneMapping = THREE.ACESFilmicToneMapping; // Added toneMapping
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); // Changed light
+            scene.add(ambientLight);
+
+            new RGBELoader()
+                .setPath('https://threejs.org/examples/textures/equirectangular/')
+                .load('royal_esplanade_1k.hdr', function (texture) {
+
+                    texture.mapping = THREE.EquirectangularReflectionMapping;
+                    const pmremGenerator = new THREE.PMREMGenerator(renderer);
+                    const envMap = pmremGenerator.fromEquirectangular(texture).texture;
+                    scene.backgroundBlurriness = 0.5; // <-- As requested
+                    scene.environment = envMap; 
+                    scene.background = new THREE.Color(0x727272);
+
+                    pmremGenerator.dispose();
+                    texture.dispose();
+
+                });
+                
+            const controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+
+            return { scene, camera, renderer, controls };
+        }
+
+        function fitCameraToObject(camera, object, controls) {
+            const box = new THREE.Box3().setFromObject(object);
+            const size = box.getSize(new THREE.Vector3());
+            const center = box.getCenter(new THREE.Vector3());
+            const maxSize = Math.max(size.x, size.y, size.z);
+            const fitHeightDistance = maxSize / (2 * Math.atan(Math.PI * camera.fov / 360));
+            const fitWidthDistance = fitHeightDistance / camera.aspect;
+            const distance = 1.2 * Math.max(fitHeightDistance, fitWidthDistance);
+            const direction = controls.target.clone().sub(camera.position).normalize().multiplyScalar(distance);
+            controls.maxDistance = distance * 10;
+            controls.target.copy(center);
+            camera.near = distance / 100;
+            camera.far = distance * 100;
+            camera.updateProjectionMatrix();
+            camera.position.copy(controls.target).sub(direction);
+            controls.update();
+        }
+
+        /**
+         * --- NEW: Asynchronous Model Group Loader ---
+         * This function fetches all models from their file paths and builds a group.
+         * It returns a Promise that resolves with the THREE.Group.
+         */
+        function loadModelsFromDefs(modelDefs, objLoader) { // Killed TWEEN. This is just better
+            const assembly = new THREE.Group();
+            const promises = []; // To track all our file loads
+
+            modelDefs.forEach(def => {
+                const promise = new Promise((resolve, reject) => {
+                    // Use objLoader.load to fetch the file from the URL
+                    objLoader.load(
+                        def.obj, // The URL: './parts/plug.obj'
+                        (object) => {
+                            // --- OnLoad ---
+                            const material = MATERIALS[def.materialKey] || MATERIALS['default'];
+                            object.traverse((child) => {
+                                if (child.isMesh) child.material = material;
+                            });
+                            object.position.set(def.startPos.x, def.startPos.y, def.startPos.z);
+                            
+                            object.userData.id = def.id;
+                            object.userData.startPos = def.startPos;
+                            object.userData.endPos = def.endPos;
+                            
+                            // NEW: Initialize the animation target
+                            object.userData.targetPosition = null; 
+                            
+                            assembly.add(object); // Add to the group
+                            resolve(object); // Mark this promise as complete
+                        },
+                        undefined, // onProgress (not used)
+                        (error) => {
+                            // --- OnError ---
+                            console.error(`Error loading ${def.obj}:`, error);
+                            reject(error); // Mark this promise as failed
+                        }
+                    );
+                });
+                promises.push(promise);
+            });
+
+            // Wait for all promises to resolve, then return the full group
+            return Promise.all(promises).then(() => assembly);
+        }
+
+
+        /**
+         * --- NEW: Asynchronous Viewer Setup ---
+         * Initializes a 3D viewer by awaiting the model loader.
+         */
+        async function setupViewer(tabId, modelDefs) {
+            const container = document.getElementById(`canvas-container-${tabId}`);
+            if (!container) {
+                console.error(`Container not found for tab: ${tabId}`);
+                return;
+            }
+
+            const { scene, camera, renderer, controls } = createScene(container);
+            // UPDATE: Store more components in activeViewers
+            activeViewers[tabId] = { scene, camera, renderer, controls, container, modelGroup: null };
+
+            let currentModelGroup = null; // This variable will be local
+            const objLoader = new OBJLoader();
+
+            try {
+                currentModelGroup = await loadModelsFromDefs(modelDefs, objLoader);
+                scene.add(currentModelGroup);
+                activeViewers[tabId].modelGroup = currentModelGroup; 
+                fitCameraToObject(camera, currentModelGroup, controls);
+            } catch (e) {
+                console.error(`Error loading models for ${tabId}: `, e);
+            }
+
+            // --- Animation loop ---
+            function animate() {
+                requestAnimationFrame(animate);
+                controls.update();
+                
+                /* REMOVED: TWEEN_update(); */
+
+                // --- NEW: Simple LERP Animation Logic ---
+                if (currentModelGroup) {
+                    currentModelGroup.rotation.y += 0.001; // Simple rotation
+
+                    // Iterate over all parts in this viewer's group
+                    currentModelGroup.children.forEach(part => {
+                        // Check if we have set a target position
+                        if (part.userData.targetPosition) {
+                            
+                            // Move 5% closer to the target each frame
+                            part.position.lerp(part.userData.targetPosition, 0.01);
+
+                            // If we are very close, snap to the target and stop animating
+                            if (part.position.distanceTo(part.userData.targetPosition) < 0.01) {
+                                part.position.copy(part.userData.targetPosition);
+                                part.userData.targetPosition = null; // Stop
+                            }
+                        }
+                    });
+                }
+                renderer.render(scene, camera);
+            }
+            animate();
+        }
+
+        function startAnimation(tabId) {
+            console.log(`Starting animation for ${tabId}`);
+            const viewer = activeViewers[tabId];
+            if (!viewer || !viewer.modelGroup) {
+                console.warn(`No model group found for ${tabId} to animate.`);
+                return;
+            }
+
+            viewer.modelGroup.children.forEach(part => {
+                if (part.userData.endPos) {
+                    // Set the target for the animation loop
+                    part.userData.targetPosition = new THREE.Vector3(
+                        part.userData.endPos.x,
+                        part.userData.endPos.y,
+                        part.userData.endPos.z
+                    );
+                }
+            });
+        }
+
+        function resetAnimation(tabId) {
+            console.log(`Resetting animation for ${tabId}`);
+            const viewer = activeViewers[tabId];
+            if (!viewer || !viewer.modelGroup) {
+                console.warn(`No model group found for ${tabId} to reset.`);
+                return;
+            }
+
+            viewer.modelGroup.children.forEach(part => {
+                if (part.userData.startPos) {
+                    // Set the target for the animation loop
+                    part.userData.targetPosition = new THREE.Vector3(
+                        part.userData.startPos.x,
+                        part.userData.startPos.y,
+                        part.userData.startPos.z
+                    );
+                }
+            });
+        }
+
+        // --- Specific initializers for each tab (now async) ---
+        async function initTab1(tabId) {
+            await setupViewer(tabId, viewer1Defs);
+        }
+
+        async function initTab2(tabId) {
+            await setupViewer(tabId, viewer2Defs);
+        }
+
+        async function initTab3(tabId) {
+            await setupViewer(tabId, viewer3Defs);
+        }
+
+        // --- Tab Switching Logic (now async) ---
+        document.addEventListener('DOMContentLoaded', async () => { // Make async
+            const tabLinks = document.querySelectorAll('.tab-link');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabLinks.forEach(link => {
+                link.addEventListener('click', async () => { // Make async
+                    const tabId = link.getAttribute('data-tab');
+                    tabLinks.forEach(item => item.classList.remove('active'));
+                    tabContents.forEach(item => item.classList.remove('active'));
+                    link.classList.add('active');
+                    const activeContent = document.getElementById(tabId);
+                    activeContent.classList.add('active');
+
+                    if (!initializedViewers[tabId]) {
+                        initializedViewers[tabId] = true;
+                        
+                        // We now await the init functions
+                        if (tabId === 'Tab1') {
+                            await initTab1(tabId);
+                        } else if (tabId === 'Tab2') {
+                            await initTab2(tabId);
+                        } else if (tabId === 'Tab3') {
+                            await initTab3(tabId);
+                        }
+                    }
+                });
+            });
+
+            // 4. Initialize the default active tab (and await it)
+            const defaultTab = document.querySelector('.tab-link.active');
+            if (defaultTab) {
+                const defaultTabId = defaultTab.getAttribute('data-tab');
+                await initTab1(defaultTabId); // Await the first tab load
+                initializedViewers[defaultTabId] = true;
+            }
+            document.getElementById('animate-btn-Tab1').addEventListener('click', () => startAnimation('Tab1'));
+            document.getElementById('reset-btn-Tab1').addEventListener('click', () => resetAnimation('Tab1'));
+
+            document.getElementById('animate-btn-Tab2').addEventListener('click', () => startAnimation('Tab2'));
+            document.getElementById('reset-btn-Tab2').addEventListener('click', () => resetAnimation('Tab2'));
+
+            document.getElementById('animate-btn-Tab3').addEventListener('click', () => startAnimation('Tab3'));
+            document.getElementById('reset-btn-Tab3').addEventListener('click', () => resetAnimation('Tab3'));
+        });
+
+        // --- Global Resize Handler (no changes) ---
+        window.addEventListener('resize', () => {
+            const activeContent = document.querySelector('.tab-content.active');
+            if (!activeContent) return;
+
+            const tabId = activeContent.id;
+            const viewer = activeViewers[tabId];
+            if (!viewer) return;
+
+            viewer.camera.aspect = viewer.container.clientWidth / viewer.container.clientHeight;
+            viewer.camera.updateProjectionMatrix();
+            viewer.renderer.setSize(viewer.container.clientWidth, viewer.container.clientHeight);
+        });
+
+    </script>
+</body>
+</html>
