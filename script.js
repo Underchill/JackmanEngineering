@@ -1,31 +1,126 @@
-// Get references to our DOM elements
-        const canvasContainer = document.getElementById('canvas-container');
-        const canvas = document.getElementById('three-canvas');
-        const loadingIndicator = document.getElementById('loading-indicator');
-        const loadingBar = document.getElementById('loading-bar');
-        const loadingProgress = document.getElementById('loading-progress');
-        const assembleButton = document.getElementById('assemble-button');
+import * as THREE from 'three';
+        import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+        import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
+        import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
 
-        // --- Core 3D Scene Variables ---
         let scene, camera, renderer, controls, clock;
-        let modelGroup; // A THREE.Group to hold all 7 model parts
-        let loadedModels = []; // To store references to the loaded models and their data
-        const textureLoader = new THREE.TextureLoader(); // <-- ADD THIS
-        // --- Animation State ---
-        let animationState = {
-            isAssembled: false, // Is the model currently assembled?
-            isAnimating: false, // Is an animation in progress?
-            progress: 0.0,      // Animation progress (0.0 = exploded, 1.0 = assembled)
-            duration: 2.0,      // Duration of the animation in seconds
-        };
-        
-        // --- Model Definitions ---
-        // - 'id': A unique name for the part.
-        // - 'mtl': The path to the .mtl file (e.g., './part1.mtl')
-        // - 'obj': The path to the .obj file (e.g., './part1.obj')
-        // - 'startPos': The "exploded" position { x, y, z }
-        // - 'endPos': The "assembled" position { x, y, z }
-        const modelDefs = [
+        let loadedModels = [];
+        let modelGroup;
+
+
+        const MATERIALS = {
+    matYellow: new THREE.MeshStandardMaterial({
+        color: 0xffd700,
+        metalness: 0.0, // Non-metallic (like plastic or paint)
+        roughness: 0.2  // A bit glossy
+    }),
+    matRed: new THREE.MeshStandardMaterial({ 
+                    color: 0xdc2626,  // Strong Red
+                    roughness: 1, 
+                    metalness: .1 
+                }),
+    matBlueO: new THREE.MeshStandardMaterial({
+        color: 0x007bff,
+        metalness: 0.0, // Non-metallic (like glass or plastic)
+        roughness: 1,  // Very glossy
+        opacity: 0.7,
+        transparent: false,
+    }),
+    matMetallic: new THREE.MeshStandardMaterial({
+        color: 0xaaaaaa, // Base color for the metal
+        metalness: 1.0, // 100% metallic
+        roughness: 0.2  // Slightly brushed/worn metal
+    }),
+    matOrange: new THREE.MeshStandardMaterial({
+        color: 0xffa500,
+        metalness: 0.0,
+        roughness: 0.2
+    }),
+    matBlue: new THREE.MeshStandardMaterial({
+        color: 0x0055ff,
+        metalness: 0.0,
+        roughness: 0.2
+    }),
+    matBlack: new THREE.MeshStandardMaterial({ 
+                    color: 0x333333,  // Dark Graphite
+                    roughness: 1, 
+                    metalness: .1 
+                }),
+    matWhite: new THREE.MeshStandardMaterial({ 
+                    color: 0xf5f5f5,  // Off-White
+                    roughness: .2, 
+                    metalness: .1 
+                }),
+    matChrome: new THREE.MeshStandardMaterial({
+                    color: 0xffffff,  // White, to reflect light purely
+                    metalness: 1.0,   // 100% metallic
+                    roughness: 0.0,   // 0% rough (perfectly smooth)
+                }),
+    // A good, neutral default
+    default: new THREE.MeshStandardMaterial({
+        color: 0xcccccc,
+        metalness: 0.0,
+        roughness: 0.5 // A matte, plastic-like default
+    })
+};
+
+        // Demo definitions for Viewer 1
+        const viewer1Defs = [
+            { id: 'Toilet', obj: './PARTS/toilet.obj', materialKey: 'matWhite',
+            startPos: { x: 0, y: 12, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+
+            { id: 'Sealant', obj: './PARTS/sealant.obj', materialKey: 'matBlue',
+            startPos: { x: 0, y: 11, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+
+            { id: 'Nuts', obj: './PARTS/nuts.obj', materialKey: 'matMetallic',
+            startPos: { x: 0, y: 13, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+
+            { id: 'Screws', obj: './PARTS/screws.obj', materialKey: 'matMetallic',
+            startPos: { x: 0, y: 18, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+
+            { id: 'Upper Hardware', obj: './PARTS/topHW.obj', materialKey: 'matMetallic',
+            startPos: { x: 0, y: 2, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+
+            { id: 'Male Flange', obj: './PARTS/maleFlange.obj', materialKey: 'matOrange',
+            startPos: { x: 0, y: 7, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+
+            { id: 'O-Ring', obj: './PARTS/maleFlangeO.obj', materialKey: 'matBlue',
+            startPos: { x: 0, y: 7, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+
+            { id: 'Bottom HW Screws', obj: './PARTS/bottomHWScrews.obj', materialKey: 'matMetallic',
+            startPos: { x: 0, y: 1, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+
+            { id: 'Bottom HW', obj: './PARTS/bottomHW.obj', materialKey: 'matMetallic',
+            startPos: { x: 0, y: -1, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+
+            { id: 'Female Flange', obj: './PARTS/femaleFlange.obj', materialKey: 'matBlue',
+            startPos: { x: 0, y: -5, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+
+            { id: 'Screws', obj: './PARTS/femaleFlangeScrews.obj', materialKey: 'matMetallic',
+            startPos: { x: 0, y: 1, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+
+            { id: 'Floor', obj: './PARTS/floor.obj', materialKey: 'matBlack',
+            startPos: { x: 0, y: -13, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+
+            { id: 'Drain', obj: './PARTS/drain.obj', materialKey: 'matWhite',
+            startPos: { x: 0, y: -12, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+        ];
+
+        // Demo definitions for Viewer 2
+        const viewer2Defs = [
             { id: 'part1', obj: './PARTS/plug.obj', materialKey: 'matYellow',
             startPos: { x: 0, y: 12, z: 0 }, 
             endPos: { x: 0, y: 0, z: 0 } },
@@ -36,6 +131,10 @@
 
             { id: 'part2', obj: './PARTS/nuts.obj', materialKey: 'matMetallic',
             startPos: { x: 0, y: 13, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+
+            { id: 'Screws', obj: './PARTS/screws.obj', materialKey: 'matMetallic',
+            startPos: { x: 0, y: 18, z: 0 }, 
             endPos: { x: 0, y: 0, z: 0 } },
 
             { id: 'part3', obj: './PARTS/topHW.obj', materialKey: 'matMetallic',
@@ -59,291 +158,317 @@
             endPos: { x: 0, y: 0, z: 0 } },
         ];
 
+        // Your definitions for Viewer 3
+        const viewer3Defs = [
+            { id: 'part2', obj: './PARTS/nuts.obj', materialKey: 'matMetallic',
+            startPos: { x: 0, y: 13, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
 
-        // --- Initialize the 3D Scene ---
-        function init() {
-            // 1. Scene
+            { id: 'Screws', obj: './PARTS/screws.obj', materialKey: 'matMetallic',
+            startPos: { x: 0, y: 18, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+
+            { id: 'part3', obj: './PARTS/topHW.obj', materialKey: 'matMetallic',
+            startPos: { x: 0, y: 2, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+
+            { id: 'part4', obj: './PARTS/maleFlange.obj', materialKey: 'matOrange',
+            startPos: { x: 0, y: 7, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+
+            { id: 'part4', obj: './PARTS/maleFlangeO.obj', materialKey: 'matBlueO',
+            startPos: { x: 0, y: 7, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+
+            { id: 'part5', obj: './PARTS/bottomHW.obj', materialKey: 'matMetallic',
+            startPos: { x: 0, y: -1, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+
+            { id: 'part6', obj: './PARTS/femaleFlange.obj', materialKey: 'matBlue',
+            startPos: { x: 0, y: -5, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+        ];
+
+        const initializedViewers = {};
+        const activeViewers = {};
+
+        function createScene(container) {
             scene = new THREE.Scene();
-            
-            // 2. Clock (for animation timing)
             clock = new THREE.Clock();
 
-            // 3. Camera
-            const fov = 45;
-            const aspect = canvasContainer.clientWidth / canvasContainer.clientHeight;
-            const near = 0.1;
-            const far = 1000;
-            camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-
-            // Raised camera position
+            scene.background = new THREE.Color(0x222222);
+            const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
             camera.position.set(0, 20, 50);
 
-            // 4. Renderer
-            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
-            renderer.setSize(canvasContainer.clientWidth, canvasContainer.clientHeight);
-            renderer.setPixelRatio(window.devicePixelRatio);
-            renderer.shadowMap.enabled = true;
-            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.shadowMap.enabled = true; // Added shadowMap
+            container.appendChild(renderer.domElement);
+            renderer.toneMapping = THREE.ACESFilmicToneMapping; // Added toneMapping
 
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); // Changed light
             scene.add(ambientLight);
 
-            // 6. Controls
-            controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.target.set(0, 0, 0); // Point controls at the center of the action
-            controls.update();
-            controls.enableDamping = true; // Smooths out the camera movement
-
-            // reflection mapping
-
-            new THREE.RGBELoader()
+            new RGBELoader()
                 .setPath('https://threejs.org/examples/textures/equirectangular/')
                 .load('royal_esplanade_1k.hdr', function (texture) {
 
                     texture.mapping = THREE.EquirectangularReflectionMapping;
-
-                    // 1. Create the PMREMGenerator
                     const pmremGenerator = new THREE.PMREMGenerator(renderer);
-
-                    // 2. Process the texture into an optimized environment map
                     const envMap = pmremGenerator.fromEquirectangular(texture).texture;
-
-                    // 3. Set the blurred background
-                    scene.background = envMap;
                     scene.backgroundBlurriness = 0.5; // <-- As requested
-
-                    // 4. Set the environment for all reflections
-                    scene.environment = envMap;
+                    scene.environment = envMap; 
                     scene.background = new THREE.Color(0x727272);
-                    // 5. Clean up the generator and original texture
+
                     pmremGenerator.dispose();
                     texture.dispose();
 
                 });
+                
+            const controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
 
-            // 7. Model Group
-            modelGroup = new THREE.Group();
-            scene.add(modelGroup);
-
-            // 8. Load Models
-            loadAllModels();
-
-            // 9. Event Listeners
-            window.addEventListener('resize', onWindowResize);
-            assembleButton.addEventListener('click', toggleAssemble);
+            return { scene, camera, renderer, controls };
         }
 
-        // --- Load All Models ---
-        // --- Load All Models ---
-        function loadAllModels() {
-            const manager = new THREE.LoadingManager();
-            const objLoader = new THREE.OBJLoader(manager);
+        function fitCameraToObject(camera, object, controls) {
+            const box = new THREE.Box3().setFromObject(object);
+            const size = box.getSize(new THREE.Vector3());
+            const center = box.getCenter(new THREE.Vector3());
+            const maxSize = Math.max(size.x, size.y, size.z);
+            const fitHeightDistance = maxSize / (2 * Math.atan(Math.PI * camera.fov / 360));
+            const fitWidthDistance = fitHeightDistance / camera.aspect;
+            const distance = 1.2 * Math.max(fitHeightDistance, fitWidthDistance);
+            const direction = controls.target.clone().sub(camera.position).normalize().multiplyScalar(distance);
+            controls.maxDistance = distance * 10;
+            controls.target.copy(center);
+            camera.near = distance / 100;
+            camera.far = distance * 100;
+            camera.updateProjectionMatrix();
+            camera.position.copy(controls.target).sub(direction);
+            controls.update();
+        }
 
-            // --- Define our custom materials ---
-            const materials = {
-                // A bright, metallic finish for all hardware
-                hardwareMetallic: new THREE.MeshStandardMaterial({ 
-                    color: 0x808080,  // Neutral Metallic Grey
-                    roughness: 0.2,   // Shiny
-                    metalness: 0.9    // Very metallic
-                }),
-                matRed: new THREE.MeshStandardMaterial({ 
-                    color: 0xdc2626,  // Strong Red
-                    roughness: 1, 
-                    metalness: .1 
-                }),
-                matGreen: new THREE.MeshStandardMaterial({ 
-                    color: 0x16a34a,  // Clear Green
-                    roughness: 1, 
-                    metalness: .1 
-                }),
-                matBlueO: new THREE.MeshStandardMaterial({ 
-                    color: 0x0047AB,  // o ring Blue
-                    roughness: 0.4, 
-                    metalness: 0.1 
-                }),
-                matBlue: new THREE.MeshStandardMaterial({ 
-                    color: 0x2563eb,  // Primary Blue
-                    roughness: 1, 
-                    metalness: .3
-                }),
-                matYellow: new THREE.MeshStandardMaterial({ 
-                    color: 0xeab308,  // Strong Yellow
-                    roughness: 1, 
-                    metalness: .1 
-                }),
-                matOrange: new THREE.MeshStandardMaterial({ 
-                    color: 0xea580c,  // Bright Orange
-                    roughness: 1, 
-                    metalness: .1 
-                }),
-                matPurple: new THREE.MeshStandardMaterial({ 
-                    color: 0x9333ea,  // Vibrant Purple
-                    roughness: 1, 
-                    metalness: 0 
-                }),
-                matWhite: new THREE.MeshStandardMaterial({ 
-                    color: 0xf5f5f5,  // Off-White
-                    roughness: 1, 
-                    metalness: .1 
-                }),
-                matBlack: new THREE.MeshStandardMaterial({ 
-                    color: 0x333333,  // Dark Graphite
-                    roughness: 1, 
-                    metalness: .1 
-                }),
+        /**
+         * --- NEW: Asynchronous Model Group Loader ---
+         * This function fetches all models from their file paths and builds a group.
+         * It returns a Promise that resolves with the THREE.Group.
+         */
+        function loadModelsFromDefs(modelDefs, objLoader) { // Killed TWEEN. This is just better
+            const assembly = new THREE.Group();
+            const promises = []; // To track all our file loads
 
-                matMetallic: new THREE.MeshStandardMaterial({ 
-                    color: 0xa1a1aa,  // Neutral Metallic (Zinc-400)
-                    roughness: 0.2,   // Shiny
-                    metalness: 0.9    // Very metallic
-                }),
-                matChrome: new THREE.MeshStandardMaterial({
-                    color: 0xffffff,  // White, to reflect light purely
-                    metalness: 1.0,   // 100% metallic
-                    roughness: 0.0,   // 0% rough (perfectly smooth)
-                })
-            };
+            modelDefs.forEach(def => {
+                const promise = new Promise((resolve, reject) => {
+                    // Use objLoader.load to fetch the file from the URL
+                    objLoader.load(
+                        def.obj, // The URL: './parts/plug.obj'
+                        (object) => {
+                            // --- OnLoad ---
+                            const material = MATERIALS[def.materialKey] || MATERIALS['default'];
+                            object.traverse((child) => {
+                                if (child.isMesh) child.material = material;
+                            });
+                            object.position.set(def.startPos.x, def.startPos.y, def.startPos.z);
+                            
+                            object.userData.id = def.id;
+                            object.userData.startPos = def.startPos;
+                            object.userData.endPos = def.endPos;
+                            
+                            // NEW: Initialize the animation target
+                            object.userData.targetPosition = null; 
+                            
+                            assembly.add(object); // Add to the group
+                            resolve(object); // Mark this promise as complete
+                        },
+                        undefined, // onProgress (not used)
+                        (error) => {
+                            // --- OnError ---
+                            console.error(`Error loading ${def.obj}:`, error);
+                            reject(error); // Mark this promise as failed
+                        }
+                    );
+                });
+                promises.push(promise);
+            });
 
-            let modelsLoaded = 0;
-            const totalModels = modelDefs.length;
+            // Wait for all promises to resolve, then return the full group
+            return Promise.all(promises).then(() => assembly);
+        }
 
-            // LoadingManager callbacks
-            manager.onStart = function (url, itemsLoaded, itemsTotal) {
-                console.log('Started loading models...');
-            };
 
-            manager.onProgress = function (url, itemsLoaded, itemsTotal) {
-                // This tracks internal files, so we'll use our custom progress below
-            };
+        /**
+         * --- NEW: Asynchronous Viewer Setup ---
+         * Initializes a 3D viewer by awaiting the model loader.
+         */
+        async function setupViewer(tabId, modelDefs) {
+            const container = document.getElementById(`canvas-container-${tabId}`);
+            if (!container) {
+                console.error(`Container not found for tab: ${tabId}`);
+                return;
+            }
 
-            manager.onLoad = function () {
-                console.log('All models loaded!');
-                loadingIndicator.style.opacity = '0'; // Fade out
-                setTimeout(() => loadingIndicator.style.display = 'none', 300); // Hide after fade
-                assembleButton.disabled = false; // Enable the button
-            };
+            const { scene, camera, renderer, controls } = createScene(container);
+            // UPDATE: Store more components in activeViewers
+            activeViewers[tabId] = { scene, camera, renderer, controls, container, modelGroup: null };
 
-            manager.onError = function (url) {
-                console.error('There was an error loading ' + url);
-                loadingIndicator.innerText = 'Error loading model. Check console.';
-            };
+            let currentModelGroup = null; // This variable will be local
+            const objLoader = new OBJLoader();
 
-            // --- Loop over model definitions and load each one ---
-            modelDefs.forEach(modelDef => {
-                // Get the correct material for this model
-                const material = materials[modelDef.materialKey];
+            try {
+                currentModelGroup = await loadModelsFromDefs(modelDefs, objLoader);
+                scene.add(currentModelGroup);
+                activeViewers[tabId].modelGroup = currentModelGroup; 
 
-                objLoader.setPath('./'); // Assume files are in the same directory
-                objLoader.load(modelDef.obj, function (object) {
-                    
-                    // Set the model's initial (exploded) position
-                    object.position.set(modelDef.startPos.x, modelDef.startPos.y, modelDef.startPos.z);
-                    
-                    // --- Apply our custom material ---
-                    object.traverse(function (child) {
-                        if (child.isMesh) {
-                            child.material = material; // Assign the material
-                            child.castShadow = true;
-                            child.receiveShadow = true;
+                //fitCameraToObject(camera, currentModelGroup, controls);
+
+                camera.position.set(30, 10, -20);
+            } catch (e) {
+                console.error(`Error loading models for ${tabId}: `, e);
+            }
+
+            // --- Animation loop ---
+            function animate() {
+                requestAnimationFrame(animate);
+                controls.update();
+                
+                /* REMOVED: TWEEN_update(); */
+
+                // --- NEW: Simple LERP Animation Logic ---
+                if (currentModelGroup) {
+                    currentModelGroup.rotation.y += 0.001; // Simple rotation
+
+                    // Iterate over all parts in this viewer's group
+                    currentModelGroup.children.forEach(part => {
+                        // Check if we have set a target position
+                        if (part.userData.targetPosition) {
+                            
+                            // Move 5% closer to the target each frame
+                            part.position.lerp(part.userData.targetPosition, 0.01);
+
+                            // If we are very close, snap to the target and stop animating
+                            if (part.position.distanceTo(part.userData.targetPosition) < 0.01) {
+                                part.position.copy(part.userData.targetPosition);
+                                part.userData.targetPosition = null; // Stop
+                            }
                         }
                     });
+                }
+                renderer.render(scene, camera);
+            }
+            animate();
+        }
 
-                    // Add to our group and store the reference
-                    modelGroup.add(object);
-                    loadedModels.push({
-                        id: modelDef.id,
-                        object: object,
-                        startPos: new THREE.Vector3(modelDef.startPos.x, modelDef.startPos.y, modelDef.startPos.z),
-                        endPos: new THREE.Vector3(modelDef.endPos.x, modelDef.endPos.y, modelDef.endPos.z)
-                    });
+        function startAnimation(tabId) {
+            console.log(`Starting animation for ${tabId}`);
+            const viewer = activeViewers[tabId];
+            if (!viewer || !viewer.modelGroup) {
+                console.warn(`No model group found for ${tabId} to animate.`);
+                return;
+            }
 
-                    // Update custom progress bar
-                    modelsLoaded++;
-                    const progress = (modelsLoaded / totalModels) * 100;
-                    loadingBar.style.width = progress + '%';
-                    loadingProgress.innerText = `${Math.round(progress)}%`;
-
-                }, undefined, function (error) {
-                    console.error(`Error loading OBJ ${modelDef.obj}:`, error);
-                });
+            viewer.modelGroup.children.forEach(part => {
+                if (part.userData.endPos) {
+                    // Set the target for the animation loop
+                    part.userData.targetPosition = new THREE.Vector3(
+                        part.userData.endPos.x,
+                        part.userData.endPos.y,
+                        part.userData.endPos.z
+                    );
+                }
             });
         }
 
+        function resetAnimation(tabId) {
+            console.log(`Resetting animation for ${tabId}`);
+            const viewer = activeViewers[tabId];
+            if (!viewer || !viewer.modelGroup) {
+                console.warn(`No model group found for ${tabId} to reset.`);
+                return;
+            }
 
-        // --- Handle Button Click ---
-        function toggleAssemble() {
-            if (animationState.isAnimating) return; // Don't do anything if already moving
-
-            animationState.isAnimating = true;
-            animationState.isAssembled = !animationState.isAssembled; // Flip the state
-            
-            // Update button text
-            assembleButton.innerText = animationState.isAssembled ? 'Explode Model' : 'Assemble Model';
-        }
-
-        // --- Handle Window Resize ---
-        function onWindowResize() {
-            const width = canvasContainer.clientWidth;
-            const height = canvasContainer.clientHeight;
-
-            camera.aspect = width / height;
-            camera.updateProjectionMatrix();
-
-            renderer.setSize(width, height);
-        }
-
-        // --- Easing Function (for smooth start/end) ---
-        function easeInOutCubic(t) {
-            return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-        }
-
-        // --- Animation Loop (called every frame) ---
-        function animate() {
-            requestAnimationFrame(animate);
-
-            const delta = clock.getDelta(); // Time since last frame
-
-            // --- Handle Assembly/Explode Animation ---
-            if (animationState.isAnimating) {
-                // Move progress forward or backward
-                if (animationState.isAssembled) {
-                    animationState.progress += delta / animationState.duration; // Assemble
-                } else {
-                    animationState.progress -= delta / animationState.duration; // Explode
+            viewer.modelGroup.children.forEach(part => {
+                if (part.userData.startPos) {
+                    // Set the target for the animation loop
+                    part.userData.targetPosition = new THREE.Vector3(
+                        part.userData.startPos.x,
+                        part.userData.startPos.y,
+                        part.userData.startPos.z
+                    );
                 }
+            });
+        }
 
-                // Clamp progress between 0.0 and 1.0
-                animationState.progress = Math.max(0, Math.min(1, animationState.progress));
-                
-                // Apply easing
-                const easedProgress = easeInOutCubic(animationState.progress);
+        // --- Specific initializers for each tab (now async) ---
+        async function initTab1(tabId) {
+            await setupViewer(tabId, viewer1Defs);
+        }
 
-                // Update position of each model
-                loadedModels.forEach(model => {
-                    model.object.position.lerpVectors(model.startPos, model.endPos, easedProgress);
+        async function initTab2(tabId) {
+            await setupViewer(tabId, viewer2Defs);
+        }
+
+        async function initTab3(tabId) {
+            await setupViewer(tabId, viewer3Defs);
+        }
+
+        // --- Tab Switching Logic (now async) ---
+        document.addEventListener('DOMContentLoaded', async () => { // Make async
+            const tabLinks = document.querySelectorAll('.tab-link');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabLinks.forEach(link => {
+                link.addEventListener('click', async () => { // Make async
+                    const tabId = link.getAttribute('data-tab');
+                    tabLinks.forEach(item => item.classList.remove('active'));
+                    tabContents.forEach(item => item.classList.remove('active'));
+                    link.classList.add('active');
+                    const activeContent = document.getElementById(tabId);
+                    activeContent.classList.add('active');
+
+                    if (!initializedViewers[tabId]) {
+                        initializedViewers[tabId] = true;
+                        
+                        // We now await the init functions
+                        if (tabId === 'Tab1') {
+                            await initTab1(tabId);
+                        } else if (tabId === 'Tab2') {
+                            await initTab2(tabId);
+                        } else if (tabId === 'Tab3') {
+                            await initTab3(tabId);
+                        }
+                    }
                 });
+            });
 
-                // Check if animation is finished
-                if ((animationState.isAssembled && animationState.progress === 1.0) ||
-                    (!animationState.isAssembled && animationState.progress === 0.0)) {
-                    animationState.isAnimating = false;
-                }
+            // 4. Initialize the default active tab (and await it)
+            const defaultTab = document.querySelector('.tab-link.active');
+            if (defaultTab) {
+                const defaultTabId = defaultTab.getAttribute('data-tab');
+                await initTab1(defaultTabId); // Await the first tab load
+                initializedViewers[defaultTabId] = true;
             }
+            document.getElementById('animate-btn-Tab1').addEventListener('click', () => startAnimation('Tab1'));
+            document.getElementById('reset-btn-Tab1').addEventListener('click', () => resetAnimation('Tab1'));
 
-            // --- Handle idle rotation ---
-            // Only rotate if *not* animating, to avoid weird motion
-            if (!animationState.isAnimating) {
-                 modelGroup.rotation.y += 0.1 * delta;
-            }
+            document.getElementById('animate-btn-Tab2').addEventListener('click', () => startAnimation('Tab2'));
+            document.getElementById('reset-btn-Tab2').addEventListener('click', () => resetAnimation('Tab2'));
 
-            // Update controls
-            controls.update();
+            document.getElementById('animate-btn-Tab3').addEventListener('click', () => startAnimation('Tab3'));
+            document.getElementById('reset-btn-Tab3').addEventListener('click', () => resetAnimation('Tab3'));
+        });
 
-            // Render the scene
-            renderer.render(scene, camera);
-        }
+        // --- Global Resize Handler (no changes) ---
+        window.addEventListener('resize', () => {
+            const activeContent = document.querySelector('.tab-content.active');
+            if (!activeContent) return;
 
-        // --- Start Everything ---
-        init();
-        animate();
+            const tabId = activeContent.id;
+            const viewer = activeViewers[tabId];
+            if (!viewer) return;
+
+            viewer.camera.aspect = viewer.container.clientWidth / viewer.container.clientHeight;
+            viewer.camera.updateProjectionMatrix();
+            viewer.renderer.setSize(viewer.container.clientWidth, viewer.container.clientHeight);
+        });

@@ -3,112 +3,247 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JJ</title>
-    <!-- 
-      Load Tailwind CSS for styling.
-      The typography plugin is added for nice text formatting.
-    -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    },
-                },
-            },
-        }
-    </script>
-    <!-- Load three.js (core library) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <!-- Load OrbitControls (for mouse/touch rotation) -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <!-- Loaders for .obj and .mtl files -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/RGBELoader.js"></script> <style>
+    <title>3D File Viewer Tabs (Async)</title>
+
     <style>
-        /* Custom style for the canvas to ensure it resizes correctly */
-        #three-canvas {
-            width: 100%;
-            height: 100%;
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        h2 {
+            padding: 10px 20px;
+            margin: 0;
+            background-color: #e9e9e9;
+        }
+
+        .tab-bar {
+            overflow: hidden;
+            background-color: #333;
+            border-bottom: 3px solid #555;
+        }
+
+        .tab-bar button {
+            background-color: inherit;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 14px 18px;
+            transition: 0.3s;
+            font-size: 17px;
+            color: white;
+        }
+
+        .tab-bar button:hover {
+            background-color: #555;
+        }
+
+        .tab-bar button.active {
+            background-color: #007bff;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 10px;
+            border-top: none;
+        }
+        
+        .tab-content.active {
             display: block;
         }
+
+        .viewer-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .canvas-container {
+            width: 100%;
+            height: 60vh;
+            background-color: #222222;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .canvas-container canvas {
+            width: 100% !important;
+            height: 100% !important;
+            display: block;
+        }
+
+        .info-pane {
+            width: 100%;
+            background-color: #ffffff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            box-sizing: border-box;
+            max-height: 40vh;
+            overflow-y: auto;
+        }
+        
+        .info-pane h3 {
+            margin-top: 0;
+            color: #007bff;
+        }
+
+        @media (min-width: 768px) {
+            .viewer-layout {
+                flex-direction: row;
+                height: 75vh;
+            }
+
+            .canvas-container {
+                flex: 0 0 65%;
+                height: 100%;
+            }
+
+            .info-pane {
+                flex: 1 1 35%;
+                height: 100%;
+                max-height: 100%; 
+                overflow-y: auto;
+            }
+        }
+        .btn-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap; /* Allow buttons to stack on small screens */
+        }
+
+        .animate-btn, .reset-btn {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: white;
+            flex-grow: 1; /* Allow buttons to share space */
+            min-width: 100px; /* Prevent them from getting too small */
+        }
+
+        .animate-btn {
+            background-color: #007bff;
+        }
+        .animate-btn:hover {
+            background-color: #0056b3;
+        }
+
+        .reset-btn {
+            background-color: #6c757d;
+        }
+        .reset-btn:hover {
+            background-color: #5a6268;
+        }
     </style>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.min.js",
+            "three/examples/jsm/controls/OrbitControls.js": "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/controls/OrbitControls.js",
+            "three/examples/jsm/loaders/OBJLoader.js": "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/OBJLoader.js",
+            "three/examples/jsm/loaders/RGBELoader.js": "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/RGBELoader.js"
+        }
+    }
+    </script>
+
 </head>
-<body class="font-sans bg-slate-100 min-h-screen flex items-start md:items-center justify-center p-4">
+<body>
 
-    <!-- 
-      Main card container.
-      Flex layout to create columns.
-      Stacks vertically on mobile (flex-col) and sits side-by-side on desktop (md:flex-row).
-      Grows to fill more of the screen.
-    -->
-    <div class="bg-white shadow-xl rounded-lg w-full max-w-full overflow-hidden flex flex-col md:flex-row md:h-[calc(100vh-2rem)] md:max-h-[1200px]">
+    <h2>Telescopic Toilet Flange </h2>
 
-        <!-- 
-          Column 1: Canvas Container
-          Takes 60% of width on desktop, full width on mobile.
-          min-h-[50vh] (mobile) for more vertical space, md:min-h-0 (desktop).
-          Added flex-grow and flex-shrink to allow flexible sizing on mobile.
-        -->
-        <div id="canvas-container" class="w-full md:w-3/5 rounded-lg overflow-hidden bg-slate-200 relative min-h-[50vh] md:min-h-0 flex-grow flex-shrink">
-            <!-- This is the canvas our 3D scene will be rendered into -->
-            <canvas id="three-canvas"></canvas>
-
-            <!-- Loading Indicator -->
-            <div id="loading-indicator" class_comment_section_id="loading-indicator" class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-200 bg-opacity-90 transition-opacity duration-300">
-                <div class="text-slate-700 text-lg font-medium">Loading 3D Models...</div>
-                <div id="loading-progress" class="text-slate-600 text-sm mt-2">0%</div>
-                <div class="w-3/4 max-w-sm bg-slate-300 rounded-full h-2.5 mt-4">
-                    <div id="loading-bar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
-                </div>
-                <p class="mt-4 text-xs text-slate-500 text-center px-4">Loading 7 model parts. Please wait.</p>
-            </div>
-        </div>
-
-        <!-- 
-          Column 2: Text Box
-          Takes 40% of width on desktop, full width on mobile.
-          Uses flex-col to allow text area to grow and scroll.
-          Added flex-grow and flex-shrink to allow flexible sizing on mobile.
-        -->
-        <div class="w-full md:w-2/5 flex flex-col min-h-[200px] md:h-full flex-grow flex-shrink">
-            <!-- This inner div adds padding and handles the scrolling content -->
-            <div class="p-6 md:p-8 flex flex-col h-full">
-                <h2 class="text-xl font-semibold text-slate-700 mb-4 flex-shrink-0">Jackman Engineering Telescopic Toilet Flange</h2>
-                
-                <!-- Action Button -->
-                <button id="assemble-button" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all duration-200 disabled:bg-slate-400 disabled:cursor-not-allowed mb-6 flex-shrink-0" disabled>
-                    Assemble Model
-                </button>
-
-                <!-- 
-                  Scrolling text area.
-                  'prose' class from typography plugin styles the text.
-                  'overflow-y-auto' makes this part scroll.
-                  'flex-grow' makes it fill the remaining space.
-                -->
-                <div class="prose prose-slate max-w-none overflow-y-auto flex-grow" style="max-height: calc(100% - 100px);">
-                    <p>This is a demonstration of an "exploded view" animation. The model is composed of hardware </p>
-                    <p>Click the "Assemble Model" button above to animate all the parts into their final, "assembled" positions. Click it again to reverse the animation and "explode" the parts back out.</p>
-                    
-                    <p>A telescoping toilet mounting assembly and a method for mounting a toilet to a floor and a wastewater pipe. Hollow bolts project from clamping plates to be received through mounting holes in an upper male flange section and through mounting holes of a toilet base. Base bolt nuts are tightened onto the hollow bolts to secure the upper male flange section to the toilet base prior to lowering the toilet and the upper male flange section into engagement with a lower female flange section. </p>
-                    <h4>Identification of parts by color</h4>
-                    <ul>
-                        <li>Yellow: Post installation protective plug</li>
-                        <li>Orange: Male flange, this part is glued to the toilet</li>
-                        <li>Blue: Female flange, this part is glued to the drain</li>
-                        <li>Darker Blue: Air tight O - Ring</li>
-                    </ul>
-                    <p>Fastening bolt structures with adjustable-length body portions and threaded tips can pass through the hollow bolts and into threaded engagement with mounting members fixed to the lower female flange section fixed to the wastewater pipe and the floor. Alternatively, fastening bolts pass through the hollow bolts and into threaded engagement with upstanding registration and locking rods retained relative to the lower female flange section.</p>
-                </div>
-            </div>
-        </div>
-
+    <!-- The Tab Bar -->
+    <div class="tab-bar">
+        <button class="tab-link active" data-tab="Tab1">Viewer 1 (Demo)</button>
+        <button class="tab-link" data-tab="Tab2">Viewer 2 (Demo)</button>
+        <button class="tab-link" data-tab="Tab3">Viewer 3 (Demo)</button>
     </div>
 
-    <script type="module" src="script.js" defer></script>
+    <!-- Tab 1 Content -->
+    <div id="Tab1" class="tab-content active">
+        <div class="viewer-layout">
+            <div class="canvas-container" id="canvas-container-Tab1"></div>
+            <div class="info-pane">
+                <h3>Installation</h3>
+                <p>This is the installation scene loaded from <strong>viewer1Defs</strong>.</p>
+                <p>Initiate the animation by clicking "Install"</p> 
+                <p>A telescoping toilet mounting assembly and a method for mounting a toilet to a floor and a wastewater pipe. Hollow bolts project from clamping plates to be received through mounting holes in an upper male flange section and through mounting holes of a toilet base. Base bolt nuts are tightened onto the hollow bolts to secure the upper male flange section to the toilet base prior to lowering the toilet and the upper male flange section into engagement with a lower female flange section. </p>
+
+                <hr>
+                <h4>Controls:</h4>
+                <ul>
+                    <li><strong>Yellow</strong> Female flange, this attaches to the toilet</li>
+                    <li><strong>Blue</strong> High strength sealant</li>
+                    <li><strong>Blue</strong> Female flange, this part is glued to the drain</li>
+                    <li><strong>Green</strong> Drain</li>
+                </ul>
+                <div class="btn-container">
+                    <button id="animate-btn-Tab1" class="animate-btn">Install</button>
+                    <button id="reset-btn-Tab1" class="reset-btn">Reset</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab 2 Content -->
+    <div id="Tab2" class="tab-content">
+        <div class="viewer-layout">
+            <div class="canvas-container" id="canvas-container-Tab2"></div>
+            <div class="info-pane">
+                <h3>About Viewer 2</h3>
+                <p>This scene is loaded asynchronously from <strong>viewer2Defs</strong>.</p>
+                <hr>
+                <h4>Controls:</h4>
+                <ul>
+                    <li><strong>Left-click + drag:</strong> Rotate</li>
+                    <li><strong>Right-click + drag:</strong> Pan</li>
+                    <li><strong>Mouse wheel scroll:</strong> Zoom</li>
+                </ul>
+                <div class="btn-container">
+                    <button id="animate-btn-Tab2" class="animate-btn">Animate Parts</button>
+                    <button id="reset-btn-Tab2" class="reset-btn">Reset</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab 3 Content -->
+    <div id="Tab3" class="tab-content">
+        <div class="viewer-layout">
+            <div class="canvas-container" id="canvas-container-Tab3"></div>
+            <div class="info-pane">
+                <h3>About Viewer 3 (Your Data)</h3>
+                <p>This scene is loaded asynchronously from <strong>viewer3Defs</strong>.</p>
+                <hr>
+                <h4>Controls:</h4>
+                <ul>
+                    <li><strong>Left-click + drag:</strong> Rotate</li>
+                    <li><strong>Right-click + drag:</strong> Pan</li>
+                    <li><strong>Mouse wheel scroll:</strong> Zoom</li>
+                </ul>
+                <div class="btn-container">
+                    <button id="animate-btn-Tab3" class="animate-btn">Animate Parts</button>
+                    <button id="reset-btn-Tab3" class="reset-btn">Reset</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 
+      START OF JAVASCRIPT
+    -->
+<script type="module" src="script.js" defer></script>
 </body>
 </html>
