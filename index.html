@@ -1,108 +1,105 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D File Viewer Tabs (Async)</title>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>3D File Viewer Tabs (Async)</title>
+        <link rel="stylesheet" href="style.css">
+        <script type="importmap">
+            {
+                "imports": {
+                    "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.min.js",
+                    "three/examples/jsm/controls/OrbitControls.js": "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/controls/OrbitControls.js",
+                    "three/examples/jsm/loaders/OBJLoader.js": "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/OBJLoader.js",
+                    "three/examples/jsm/loaders/RGBELoader.js": "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/RGBELoader.js"
+                }
+            }
+        </script>
+    </head>
+    <body>
 
-    <link rel="stylesheet" href="style.css">
+        <h2>Telescopic Toilet Flange</h2>
+        <div class="tab-bar">
+            <button class="tab-link active" data-tab="Tab1">Installation</button>
+            <button class="tab-link" data-tab="Tab2">Assembly</button>
+            <button class="tab-link" data-tab="Tab3">Parts</button>
+        </div>
 
-    <script type="importmap">
-    {
-        "imports": {
-            "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.min.js",
-            "three/examples/jsm/controls/OrbitControls.js": "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/controls/OrbitControls.js",
-            "three/examples/jsm/loaders/OBJLoader.js": "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/OBJLoader.js",
-            "three/examples/jsm/loaders/RGBELoader.js": "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/RGBELoader.js"
-        }
-    }
-    </script>
-
-</head>
-<body>
-
-    <h2>Telescopic Toilet Flange </h2>
-
-    <!-- The Tab Bar -->
-    <div class="tab-bar">
-        <button class="tab-link active" data-tab="Tab1">Viewer 1 (Demo)</button>
-        <button class="tab-link" data-tab="Tab2">Viewer 2 (Demo)</button>
-        <button class="tab-link" data-tab="Tab3">Viewer 3 (Demo)</button>
-    </div>
-
-    <!-- Tab 1 Content -->
-    <div id="Tab1" class="tab-content active">
-        <div class="viewer-layout">
-            <div class="canvas-container" id="canvas-container-Tab1"></div>
-            <div class="info-pane">
-                <h3>Installation</h3>
-                <p>This is the installation scene loaded from <strong>viewer1Defs</strong>.</p>
-                <p>Initiate the animation by clicking "Install"</p> 
-                <p>A telescoping toilet mounting assembly and a method for mounting a toilet to a floor and a wastewater pipe. Hollow bolts project from clamping plates to be received through mounting holes in an upper male flange section and through mounting holes of a toilet base. Base bolt nuts are tightened onto the hollow bolts to secure the upper male flange section to the toilet base prior to lowering the toilet and the upper male flange section into engagement with a lower female flange section. </p>
-
-                <hr>
-                <h4>Controls:</h4>
-                <ul>
-                    <li><strong>Yellow</strong> Female flange, this attaches to the toilet</li>
-                    <li><strong>Blue</strong> High strength sealant</li>
-                    <li><strong>Blue</strong> Female flange, this part is glued to the drain</li>
-                    <li><strong>Green</strong> Drain</li>
-                </ul>
-                <div class="btn-container">
-                    <button id="animate-btn-Tab1" class="animate-btn">Install</button>
-                    <button id="reset-btn-Tab1" class="reset-btn">Reset</button>
+        <div id="Tab1" class="tab-content active">
+            <div class="viewer-layout">
+                <div class="canvas-container" id="canvas-container-Tab1">
+                    <div class="btn-container">
+                        <button id="animate-btn-Tab1" class="animate-btn">Install</button>
+                        <button id="reset-btn-Tab1" class="reset-btn">Reset</button>
+                    </div>
+                </div>
+                <div class="info-pane">
+                    <h3>Installation</h3>
+                    <p>This is the installation scene loaded from <strong>viewer1Defs</strong>.</p>
+                    <p>Initiate the animation by clicking "Install"</p>
+                    <p>A telescoping toilet mounting assembly and a method for mounting a toilet to a floor and a wastewater pipe. Hollow bolts project from clamping plates to be received through mounting holes in an upper male flange section and through mounting holes of a toilet base. Base bolt nuts are tightened onto the hollow bolts to secure the upper male flange section to the toilet base prior to lowering the toilet and the upper male flange section into engagement with a lower female flange section. </p>
+                    <hr>
+                    <h4>Components:</h4>
+                    <ul>
+                        <li><strong>Yellow</strong> Female flange, this attaches to the toilet</li>
+                        <li><strong>Blue</strong> High strength sealant</li>
+                        <li><strong>Blue</strong> Female flange, this part is glued to the drain</li>
+                        <li><strong>Green</strong> Drain</li>
+                    </ul>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Tab 2 Content -->
-    <div id="Tab2" class="tab-content">
-        <div class="viewer-layout">
-            <div class="canvas-container" id="canvas-container-Tab2"></div>
-            <div class="info-pane">
-                <h3>About Viewer 2</h3>
-                <p>This scene is loaded asynchronously from <strong>viewer2Defs</strong>.</p>
-                <hr>
-                <h4>Controls:</h4>
-                <ul>
-                    <li><strong>Left-click + drag:</strong> Rotate</li>
-                    <li><strong>Right-click + drag:</strong> Pan</li>
-                    <li><strong>Mouse wheel scroll:</strong> Zoom</li>
-                </ul>
-                <div class="btn-container">
-                    <button id="animate-btn-Tab2" class="animate-btn">Animate Parts</button>
-                    <button id="reset-btn-Tab2" class="reset-btn">Reset</button>
+        <div id="Tab2" class="tab-content">
+            <div class="viewer-layout">
+                <div class="canvas-container" id="canvas-container-Tab2">
+                    <div class="btn-container">
+                        <button id="animate-btn-Tab2" class="animate-btn">Install</button>
+                        <button id="reset-btn-Tab2" class="reset-btn">Reset</button>
+                    </div>
+                </div>
+                <div class="info-pane">
+                    <h3>Installation</h3>
+                    <p>This is the installation scene loaded from <strong>viewer2Defs</strong>.</p>
+                    <p>Initiate the animation by clicking "Install"</p>
+                    <p>A telescoping toilet mounting assembly and a method for mounting a toilet to a floor and a wastewater pipe. Hollow bolts project from clamping plates to be received through mounting holes in an upper male flange section and through mounting holes of a toilet base. Base bolt nuts are tightened onto the hollow bolts to secure the upper male flange section to the toilet base prior to lowering the toilet and the upper male flange section into engagement with a lower female flange section. </p>
+                    <hr>
+                    <h4>Components:</h4>
+                    <ul>
+                        <li><strong>Yellow</strong> Female flange, this attaches to the toilet</li>
+                        <li><strong>Blue</strong> High strength sealant</li>
+                        <li><strong>Blue</strong> Female flange, this part is glued to the drain</li>
+                        <li><strong>Green</strong> Drain</li>
+                    </ul>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Tab 3 Content -->
-    <div id="Tab3" class="tab-content">
-        <div class="viewer-layout">
-            <div class="canvas-container" id="canvas-container-Tab3"></div>
-            <div class="info-pane">
-                <h3>About Viewer 3 (Your Data)</h3>
-                <p>This scene is loaded asynchronously from <strong>viewer3Defs</strong>.</p>
-                <hr>
-                <h4>Controls:</h4>
-                <ul>
-                    <li><strong>Left-click + drag:</strong> Rotate</li>
-                    <li><strong>Right-click + drag:</strong> Pan</li>
-                    <li><strong>Mouse wheel scroll:</strong> Zoom</li>
-                </ul>
-                <div class="btn-container">
-                    <button id="animate-btn-Tab3" class="animate-btn">Animate Parts</button>
-                    <button id="reset-btn-Tab3" class="reset-btn">Reset</button>
+        <div id="Tab3" class="tab-content active">
+            <div class="viewer-layout">
+                <div class="canvas-container" id="canvas-container-Tab3">
+                    <div class="btn-container">
+                        <button id="animate-btn-Tab3" class="animate-btn">Install</button>
+                        <button id="reset-btn-Tab3" class="reset-btn">Reset</button>
+                    </div>
+                </div>
+                <div class="info-pane">
+                    <h3>Installation</h3>
+                    <p>This is the installation scene loaded from <strong>viewer3Defs</strong>.</p>
+                    <p>Initiate the animation by clicking "Install"</p>
+                    <p>A telescoping toilet mounting assembly and a method for mounting a toilet to a floor and a wastewater pipe. Hollow bolts project from clamping plates to be received through mounting holes in an upper male flange section and through mounting holes of a toilet base. Base bolt nuts are tightened onto the hollow bolts to secure the upper male flange section to the toilet base prior to lowering the toilet and the upper male flange section into engagement with a lower female flange section. </p>
+                    <hr>
+                    <h4>Components:</h4>
+                    <ul>
+                        <li><strong>Yellow</strong> Female flange, this attaches to the toilet</li>
+                        <li><strong>Blue</strong> High strength sealant</li>
+                        <li><strong>Blue</strong> Female flange, this part is glued to the drain</li>
+                        <li><strong>Green</strong> Drain</li>
+                    </ul>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- 
-      START OF JAVASCRIPT
-    -->
-<script type="module" src="script.js" defer></script>
-</body>
+        <script type="module" src="script.js" defer></script>
+    </body>
 </html>
