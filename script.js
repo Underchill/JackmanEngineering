@@ -7,6 +7,7 @@ import * as THREE from 'three';
         let loadedModels = [];
         let modelGroup;
 
+        const textureLoader = new THREE.TextureLoader();
 
         const MATERIALS = {
     matYellow: new THREE.MeshStandardMaterial({
@@ -61,7 +62,26 @@ import * as THREE from 'three';
         color: 0xcccccc,
         metalness: 0.0,
         roughness: 0.5 // A matte, plastic-like default
-    })
+    }),
+
+    matPBR: new THREE.MeshStandardMaterial({
+        map: textureLoader.load('./MATERIALS/angled-tiled-floor-bl/angled-tiled-floor_albedo.png'),
+
+        normalMap: textureLoader.load('./MATERIALS/angled-tiled-floor-bl/angled-tiled-floor_normal-ogl.png'),
+        normalScale: new THREE.Vector2(1, 1), // Adjust depth of normal
+
+        roughnessMap: textureLoader.load('./MATERIALS/angled-tiled-floor-bl/angled-tiled-floor_roughness.png'),
+        roughness: 1.0, // Acts as a multiplier. Set to 1 to use the map fully.
+
+        metalnessMap: textureLoader.load('./MATERIALS/angled-tiled-floor-bl/angled-tiled-floor_metallic.png'),
+        metalness: 1.0, // Acts as a multiplier. Set to 1 to use the map fully.
+
+        aoMap: textureLoader.load('./MATERIALS/angled-tiled-floor-bl/angled-tiled-floor_ao.png'),
+        aoMapIntensity: 1, // Adjust shadow intensity in crevices
+
+        displacementMap: textureLoader.load('./MATERIALS/angled-tiled-floor-bl/angled-tiled-floor_height.png'),
+        displacementScale: 0.5, // KEEP THIS LOW initially!
+    }),
 };
 
         // Demo definitions for Viewer 1
@@ -110,7 +130,7 @@ import * as THREE from 'three';
             startPos: { x: 0, y: 1, z: 0 }, 
             endPos: { x: 0, y: 0, z: 0 } },
 
-            { id: 'Floor', obj: './PARTS/floor.obj', materialKey: 'matBlack',
+            { id: 'Floor', obj: './PARTS/floor.obj', materialKey: 'matPBR',
             startPos: { x: 0, y: -13, z: 0 }, 
             endPos: { x: 0, y: 0, z: 0 } },
 
