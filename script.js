@@ -1,91 +1,96 @@
 import * as THREE from 'three';
-        import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-        import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
-        import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
+import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
 
-        let scene, camera, renderer, controls, clock;
-        let loadedModels = [];
-        let modelGroup;
+const BLOOM_SCENE = 1; // Layer 1 is for glowing objects
 
-        const textureLoader = new THREE.TextureLoader();
+function createTooltip() {
+    if (document.getElementById('tooltip')) return; // Already exists
+    
+    const style = document.createElement('style');
+    style.innerHTML = `
+        #tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-family: sans-serif;
+            font-size: 14px;
+            pointer-events: none; /* Let clicks pass through */
+            display: none; /* Hidden by default */
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            z-index: 1000;
+            transform: translate(-50%, -100%); /* Center above cursor/object */
+            margin-top: -10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        #tooltip h4 { margin: 0 0 4px 0; color: #ffd700; font-size: 1.1em; }
+        #tooltip p { margin: 0; color: #ccc; font-size: 0.9em; }
+    `;
+    document.head.appendChild(style);
 
-        const MATERIALS = {
-    matYellow: new THREE.MeshStandardMaterial({
-        color: 0xffd700,
-        metalness: 0.0, // Non-metallic (like plastic or paint)
-        roughness: 0.2  // A bit glossy
-    }),
-    matRed: new THREE.MeshStandardMaterial({ 
-                    color: 0xdc2626,  // Strong Red
-                    roughness: 1, 
-                    metalness: .1 
-                }),
-    matBlueO: new THREE.MeshStandardMaterial({
-        color: 0x007bff,
-        metalness: 0.0, // Non-metallic (like glass or plastic)
-        roughness: 1,  // Very glossy
-        opacity: 0.7,
-        transparent: false,
-    }),
-    matMetallic: new THREE.MeshStandardMaterial({
-        color: 0xaaaaaa, // Base color for the metal
-        metalness: 1.0, // 100% metallic
-        roughness: 0.2  // Slightly brushed/worn metal
-    }),
-    matOrange: new THREE.MeshStandardMaterial({
-        color: 0xffa500,
-        metalness: 0.0,
-        roughness: 0.2
-    }),
-    matBlue: new THREE.MeshStandardMaterial({
-        color: 0x0055ff,
-        metalness: 0.0,
-        roughness: 0.2
-    }),
-    matBlack: new THREE.MeshStandardMaterial({ 
-                    color: 0x333333,  // Dark Graphite
-                    roughness: 1, 
-                    metalness: .1 
-                }),
-    matWhite: new THREE.MeshStandardMaterial({ 
-                    color: 0xf5f5f5,  // Off-White
-                    roughness: .2, 
-                    metalness: .1 
-                }),
-    matChrome: new THREE.MeshStandardMaterial({
-                    color: 0xffffff,  // White, to reflect light purely
-                    metalness: 1.0,   // 100% metallic
-                    roughness: 0.0,   // 0% rough (perfectly smooth)
-                }),
-    // A good, neutral default
-    default: new THREE.MeshStandardMaterial({
-        color: 0xcccccc,
-        metalness: 0.0,
-        roughness: 0.5 // A matte, plastic-like default
-    }),
+    const div = document.createElement('div');
+    div.id = 'tooltip';
+    document.body.appendChild(div);
+}
 
+createTooltip(); // Run immediately
+const tooltip = document.getElementById('tooltip');
+
+// --- SHADERS & MATERIALS ---
+const textureLoader = new THREE.TextureLoader();
+
+const vertexShader = `
+    varying vec2 vUv;
+    void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+    }
+`;
+
+const fragmentShader = `
+    uniform sampler2D baseTexture;
+    uniform sampler2D bloomTexture;
+    varying vec2 vUv;
+    void main() {
+        gl_FragColor = ( texture2D( baseTexture, vUv ) + vec4( 1.0 ) * texture2D( bloomTexture, vUv ) );
+    }
+`;
+
+const darkMaterial = new THREE.MeshBasicMaterial( { color: 'black' } );
+const materials = {};
+
+const MATERIALS = {
+    matYellow: new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.0, roughness: 0.2 }),
+    matRed: new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 1, metalness: .1 }),
+    matBlueO: new THREE.MeshStandardMaterial({color: 0x007bff, metalness: 0.0, roughness: 1, opacity: 0.7, transparent: false, emissive: 0x001133}),
+    matMetallic: new THREE.MeshStandardMaterial({ color: 0xaaaaaa, metalness: 1.0, roughness: 0.2 }),
+    matOrange: new THREE.MeshStandardMaterial({color: 0xffa500, metalness: 0.0, roughness: 0.2, emissive: 0xffa500}),
+    matBlue: new THREE.MeshStandardMaterial({ color: 0x0055ff, metalness: 0.0, roughness: 0.2 }),
+    matBlack: new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 1, metalness: .1 }),
+    matWhite: new THREE.MeshStandardMaterial({ color: 0xf5f5f5, roughness: .2, metalness: .1 }),
+    matChrome: new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 1.0, roughness: 0.0 }),
+    default: new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.0, roughness: 0.5 }),
     matPBR: new THREE.MeshStandardMaterial({
         map: textureLoader.load('./MATERIALS/angled-tiled-floor-bl/angled-tiled-floor_albedo.png'),
-
         normalMap: textureLoader.load('./MATERIALS/angled-tiled-floor-bl/angled-tiled-floor_normal-ogl.png'),
-        normalScale: new THREE.Vector2(1, 1), // Adjust depth of normal
-
         roughnessMap: textureLoader.load('./MATERIALS/angled-tiled-floor-bl/angled-tiled-floor_roughness.png'),
-        roughness: 1.0, // Acts as a multiplier. Set to 1 to use the map fully.
-
         metalnessMap: textureLoader.load('./MATERIALS/angled-tiled-floor-bl/angled-tiled-floor_metallic.png'),
-        metalness: 1.0, // Acts as a multiplier. Set to 1 to use the map fully.
-
         aoMap: textureLoader.load('./MATERIALS/angled-tiled-floor-bl/angled-tiled-floor_ao.png'),
-        aoMapIntensity: 1, // Adjust shadow intensity in crevices
-
         displacementMap: textureLoader.load('./MATERIALS/angled-tiled-floor-bl/angled-tiled-floor_height.png'),
-        displacementScale: 0.5, // KEEP THIS LOW initially!
+        displacementScale: 0.5,
     }),
 };
 
-        // Demo definitions for Viewer 1
-        const viewer1Defs = [
+const viewer1Defs = [
             { id: 'Toilet', obj: './PARTS/toilet.obj', materialKey: 'matWhite',
             startPos: { x: 0, y: 12, z: 0 }, 
             endPos: { x: 0, y: 0, z: 0 } },
@@ -139,17 +144,16 @@ import * as THREE from 'three';
             endPos: { x: 0, y: 0, z: 0 } },
         ];
 
-        // Demo definitions for Viewer 2
         const viewer2Defs = [
-            { id: 'part1', obj: './PARTS/plug.obj', materialKey: 'matYellow',
+            { id: 'Test Plug', obj: './PARTS/plug.obj', materialKey: 'matYellow',
             startPos: { x: 0, y: 12, z: 0 }, 
             endPos: { x: 0, y: 0, z: 0 } },
 
-            { id: 'part1', obj: './PARTS/plugO.obj', materialKey: 'matBlueO',
+            { id: 'Plug O-ring', obj: './PARTS/plugO.obj', materialKey: 'matBlueO',
             startPos: { x: 0, y: 12, z: 0 }, 
             endPos: { x: 0, y: 0, z: 0 } },
 
-            { id: 'part2', obj: './PARTS/nuts.obj', materialKey: 'matMetallic',
+            { id: 'Nuts', obj: './PARTS/nuts.obj', materialKey: 'matMetallic',
             startPos: { x: 0, y: 13, z: 0 }, 
             endPos: { x: 0, y: 0, z: 0 } },
 
@@ -157,30 +161,29 @@ import * as THREE from 'three';
             startPos: { x: 0, y: 18, z: 0 }, 
             endPos: { x: 0, y: 0, z: 0 } },
 
-            { id: 'part3', obj: './PARTS/topHW.obj', materialKey: 'matMetallic',
+            { id: 'Upper Hardware', obj: './PARTS/topHW.obj', materialKey: 'matMetallic',
             startPos: { x: 0, y: 2, z: 0 }, 
             endPos: { x: 0, y: 0, z: 0 } },
 
-            { id: 'part4', obj: './PARTS/maleFlange.obj', materialKey: 'matOrange',
+            { id: 'Male Flange', obj: './PARTS/maleFlange.obj', materialKey: 'matOrange',
             startPos: { x: 0, y: 7, z: 0 }, 
             endPos: { x: 0, y: 0, z: 0 } },
 
-            { id: 'part4', obj: './PARTS/maleFlangeO.obj', materialKey: 'matBlueO',
+            { id: 'Male Flange O-Ring', obj: './PARTS/maleFlangeO.obj', materialKey: 'matBlueO',
             startPos: { x: 0, y: 7, z: 0 }, 
             endPos: { x: 0, y: 0, z: 0 } },
 
-            { id: 'part5', obj: './PARTS/bottomHW.obj', materialKey: 'matMetallic',
+            { id: 'Bottom Hardware', obj: './PARTS/bottomHW.obj', materialKey: 'matMetallic',
             startPos: { x: 0, y: -1, z: 0 }, 
             endPos: { x: 0, y: 0, z: 0 } },
 
-            { id: 'part6', obj: './PARTS/femaleFlange.obj', materialKey: 'matBlue',
+            { id: 'Female Flange', obj: './PARTS/femaleFlange.obj', materialKey: 'matBlue',
             startPos: { x: 0, y: -5, z: 0 }, 
             endPos: { x: 0, y: 0, z: 0 } },
         ];
 
-        // Your definitions for Viewer 3
         const viewer3Defs = [
-            { id: 'part2', obj: './PARTS/nuts.obj', materialKey: 'matMetallic',
+            { id: 'Nuts', obj: './PARTS/nuts.obj', materialKey: 'matMetallic',
             startPos: { x: 0, y: 13, z: 0 }, 
             endPos: { x: 0, y: 0, z: 0 } },
 
@@ -188,307 +191,374 @@ import * as THREE from 'three';
             startPos: { x: 0, y: 18, z: 0 }, 
             endPos: { x: 0, y: 0, z: 0 } },
 
-            { id: 'part3', obj: './PARTS/topHW.obj', materialKey: 'matMetallic',
+            { id: 'Upper Hardware', obj: './PARTS/topHW.obj', materialKey: 'matMetallic',
             startPos: { x: 0, y: 2, z: 0 }, 
             endPos: { x: 0, y: 0, z: 0 } },
 
-            { id: 'part4', obj: './PARTS/maleFlange.obj', materialKey: 'matOrange',
+            { id: 'Male Flange', obj: './PARTS/maleFlange.obj', materialKey: 'matOrange',
             startPos: { x: 0, y: 7, z: 0 }, 
             endPos: { x: 0, y: 0, z: 0 } },
 
-            { id: 'part4', obj: './PARTS/maleFlangeO.obj', materialKey: 'matBlueO',
+            { id: 'Male Flange O-Ring', obj: './PARTS/maleFlangeO.obj', materialKey: 'matBlueO',
             startPos: { x: 0, y: 7, z: 0 }, 
             endPos: { x: 0, y: 0, z: 0 } },
 
-            { id: 'part5', obj: './PARTS/bottomHW.obj', materialKey: 'matMetallic',
+            { id: 'Bottom Hardware', obj: './PARTS/bottomHW.obj', materialKey: 'matMetallic',
             startPos: { x: 0, y: -1, z: 0 }, 
             endPos: { x: 0, y: 0, z: 0 } },
 
-            { id: 'part6', obj: './PARTS/femaleFlange.obj', materialKey: 'matBlue',
+            { id: 'Female Flange', obj: './PARTS/femaleFlange.obj', materialKey: 'matBlue',
             startPos: { x: 0, y: -5, z: 0 }, 
             endPos: { x: 0, y: 0, z: 0 } },
         ];
 
-        const initializedViewers = {};
-        const activeViewers = {};
+const initializedViewers = {};
+const activeViewers = {};
 
-        function createScene(container) {
-            scene = new THREE.Scene();
-            clock = new THREE.Clock();
+// --- HELPERS ---
 
-            scene.background = new THREE.Color(0x222222);
-            const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
-            camera.position.set(0, 20, 50);
+function checkBloomLayer(obj) {
+    return obj.layers.test( { mask: 1 << BLOOM_SCENE } );
+}
 
-            const renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(container.clientWidth, container.clientHeight);
-            renderer.shadowMap.enabled = true; // Added shadowMap
-            container.appendChild(renderer.domElement);
-            renderer.toneMapping = THREE.ACESFilmicToneMapping; // Added toneMapping
+function darkenNonBloomed( obj ) {
+    if ( obj.isMesh && checkBloomLayer(obj) === false ) {
+        materials[ obj.uuid ] = obj.material;
+        obj.material = darkMaterial;
+    }
+}
 
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); // Changed light
-            scene.add(ambientLight);
+function restoreMaterial( obj ) {
+    if ( materials[ obj.uuid ] ) {
+        obj.material = materials[ obj.uuid ];
+        delete materials[ obj.uuid ];
+    }
+}
 
-            new RGBELoader()
-                .setPath('https://threejs.org/examples/textures/equirectangular/')
-                .load('royal_esplanade_1k.hdr', function (texture) {
+function loadModelsFromDefs(modelDefs, objLoader) {
+    const assembly = new THREE.Group();
+    const promises = [];
 
-                    texture.mapping = THREE.EquirectangularReflectionMapping;
-                    const pmremGenerator = new THREE.PMREMGenerator(renderer);
-                    const envMap = pmremGenerator.fromEquirectangular(texture).texture;
-                    scene.backgroundBlurriness = 0.5; // <-- As requested
-                    scene.environment = envMap; 
-                    scene.background = new THREE.Color(0x727272);
-
-                    pmremGenerator.dispose();
-                    texture.dispose();
-
-                });
-                
-            const controls = new OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;
-            controls.dampingFactor = 0.05;
-
-            return { scene, camera, renderer, controls };
-        }
-
-        function fitCameraToObject(camera, object, controls) {
-            const box = new THREE.Box3().setFromObject(object);
-            const size = box.getSize(new THREE.Vector3());
-            const center = box.getCenter(new THREE.Vector3());
-            const maxSize = Math.max(size.x, size.y, size.z);
-            const fitHeightDistance = maxSize / (2 * Math.atan(Math.PI * camera.fov / 360));
-            const fitWidthDistance = fitHeightDistance / camera.aspect;
-            const distance = 1.2 * Math.max(fitHeightDistance, fitWidthDistance);
-            const direction = controls.target.clone().sub(camera.position).normalize().multiplyScalar(distance);
-            controls.maxDistance = distance * 10;
-            controls.target.copy(center);
-            camera.near = distance / 100;
-            camera.far = distance * 100;
-            camera.updateProjectionMatrix();
-            camera.position.copy(controls.target).sub(direction);
-            controls.update();
-        }
-
-        /**
-         * --- NEW: Asynchronous Model Group Loader ---
-         * This function fetches all models from their file paths and builds a group.
-         * It returns a Promise that resolves with the THREE.Group.
-         */
-        function loadModelsFromDefs(modelDefs, objLoader) { // Killed TWEEN. This is just better
-            const assembly = new THREE.Group();
-            const promises = []; // To track all our file loads
-
-            modelDefs.forEach(def => {
-                const promise = new Promise((resolve, reject) => {
-                    // Use objLoader.load to fetch the file from the URL
-                    objLoader.load(
-                        def.obj, // The URL: './parts/plug.obj'
-                        (object) => {
-                            // --- OnLoad ---
-                            const material = MATERIALS[def.materialKey] || MATERIALS['default'];
-                            object.traverse((child) => {
-                                if (child.isMesh) child.material = material;
-                            });
-                            object.position.set(def.startPos.x, def.startPos.y, def.startPos.z);
-                            
-                            object.userData.id = def.id;
-                            object.userData.startPos = def.startPos;
-                            object.userData.endPos = def.endPos;
-                            
-                            // NEW: Initialize the animation target
-                            object.userData.targetPosition = null; 
-                            
-                            assembly.add(object); // Add to the group
-                            resolve(object); // Mark this promise as complete
-                        },
-                        undefined, // onProgress (not used)
-                        (error) => {
-                            // --- OnError ---
-                            console.error(`Error loading ${def.obj}:`, error);
-                            reject(error); // Mark this promise as failed
-                        }
-                    );
-                });
-                promises.push(promise);
-            });
-
-            // Wait for all promises to resolve, then return the full group
-            return Promise.all(promises).then(() => assembly);
-        }
-
-
-        /**
-         * --- NEW: Asynchronous Viewer Setup ---
-         * Initializes a 3D viewer by awaiting the model loader.
-         */
-        async function setupViewer(tabId, modelDefs) {
-            const container = document.getElementById(`canvas-container-${tabId}`);
-            if (!container) {
-                console.error(`Container not found for tab: ${tabId}`);
-                return;
-            }
-
-            const { scene, camera, renderer, controls } = createScene(container);
-            // UPDATE: Store more components in activeViewers
-            activeViewers[tabId] = { scene, camera, renderer, controls, container, modelGroup: null };
-
-            let currentModelGroup = null; // This variable will be local
-            const objLoader = new OBJLoader();
-
-            try {
-                currentModelGroup = await loadModelsFromDefs(modelDefs, objLoader);
-                scene.add(currentModelGroup);
-                activeViewers[tabId].modelGroup = currentModelGroup; 
-
-                //fitCameraToObject(camera, currentModelGroup, controls);
-
-                camera.position.set(30, 10, -20);
-            } catch (e) {
-                console.error(`Error loading models for ${tabId}: `, e);
-            }
-
-            // --- Animation loop ---
-            function animate() {
-                requestAnimationFrame(animate);
-                controls.update();
-                
-                /* REMOVED: TWEEN_update(); */
-
-                // --- NEW: Simple LERP Animation Logic ---
-                if (currentModelGroup) {
-                    currentModelGroup.rotation.y += 0.001; // Simple rotation
-
-                    // Iterate over all parts in this viewer's group
-                    currentModelGroup.children.forEach(part => {
-                        // Check if we have set a target position
-                        if (part.userData.targetPosition) {
-                            
-                            // Move 5% closer to the target each frame
-                            part.position.lerp(part.userData.targetPosition, 0.01);
-
-                            // If we are very close, snap to the target and stop animating
-                            if (part.position.distanceTo(part.userData.targetPosition) < 0.01) {
-                                part.position.copy(part.userData.targetPosition);
-                                part.userData.targetPosition = null; // Stop
-                            }
+    modelDefs.forEach(def => {
+        const promise = new Promise((resolve, reject) => {
+            objLoader.load(
+                def.obj,
+                (object) => {
+                    const material = MATERIALS[def.materialKey] || MATERIALS['default'];
+                    object.traverse((child) => {
+                        if (child.isMesh) {
+                            child.material = material;
                         }
                     });
-                }
-                renderer.render(scene, camera);
+                    object.position.set(def.startPos.x, def.startPos.y, def.startPos.z);
+                    object.userData.id = def.id; // Used for the blurb text
+                    object.userData.startPos = def.startPos;
+                    object.userData.endPos = def.endPos;
+                    object.userData.targetPosition = null; 
+                    
+                    assembly.add(object);
+                    resolve(object);
+                },
+                undefined,
+                (error) => { console.error(`Error loading ${def.obj}:`, error); reject(error); }
+            );
+        });
+        promises.push(promise);
+    });
+
+    return Promise.all(promises).then(() => assembly);
+}
+
+// --- VIEWER SETUP ---
+
+async function setupViewer(tabId, modelDefs) {
+    const container = document.getElementById(`canvas-container-${tabId}`);
+    if (!container) return;
+
+    // Scene, Camera, Renderer
+    const scene = new THREE.Scene();
+    const clock = new THREE.Clock();
+    scene.background = new THREE.Color(0x0E0E0E);
+    
+    const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+    camera.position.set(0, 20, 50);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(window.devicePixelRatio); 
+    renderer.setSize(container.clientWidth, container.clientHeight);
+
+    renderer.shadowMap.enabled = true;
+    renderer.toneMapping = THREE.ReinhardToneMapping;
+    container.appendChild(renderer.domElement);
+
+    // Environment
+    new RGBELoader()
+        .setPath('https://threejs.org/examples/textures/equirectangular/')
+        .load('royal_esplanade_1k.hdr', function (texture) {
+            texture.mapping = THREE.EquirectangularReflectionMapping;
+            const pmremGenerator = new THREE.PMREMGenerator(renderer);
+            const envMap = pmremGenerator.fromEquirectangular(texture).texture;
+            scene.backgroundBlurriness = 0.5;
+            scene.environment = envMap; 
+            scene.background = new THREE.Color(0x0E0E0E);
+            pmremGenerator.dispose();
+            texture.dispose();
+        });
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+
+    // --- POST PROCESSING ---
+    const renderScene = new RenderPass( scene, camera );
+    const bloomPass = new UnrealBloomPass( 
+        new THREE.Vector2( container.clientWidth * window.devicePixelRatio, container.clientHeight * window.devicePixelRatio ), 
+        .5, 0.4, 0.85 
+    );
+    bloomPass.threshold = 0;
+    bloomPass.strength = .5; // High strength for obvious glow
+    bloomPass.radius = 0.1;
+
+    const bloomComposer = new EffectComposer( renderer );
+    bloomComposer.renderToScreen = false;
+    bloomComposer.addPass( renderScene );
+    bloomComposer.addPass( bloomPass );
+
+    const mixPass = new ShaderPass(
+        new THREE.ShaderMaterial( {
+            uniforms: {
+                baseTexture: { value: null },
+                bloomTexture: { value: bloomComposer.renderTarget2.texture }
+            },
+            vertexShader: vertexShader,
+            fragmentShader: fragmentShader,
+        } ), 'baseTexture'
+    );
+    mixPass.needsSwap = true;
+
+    const fxaaPass = new ShaderPass( FXAAShader );
+    const pixelRatio = renderer.getPixelRatio();
+    fxaaPass.material.uniforms[ 'resolution' ].value.x = 1 / ( container.clientWidth * pixelRatio );
+    fxaaPass.material.uniforms[ 'resolution' ].value.y = 1 / ( container.clientHeight * pixelRatio );
+    const outputPass = new OutputPass();
+
+    const finalComposer = new EffectComposer( renderer );
+
+    finalComposer.setPixelRatio(pixelRatio);
+    finalComposer.addPass( renderScene );
+    finalComposer.addPass( mixPass );
+    finalComposer.addPass( fxaaPass );
+    finalComposer.addPass( outputPass );
+
+    // --- INTERACTION VARIABLES ---
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    let selectedObject = null; // Track what is currently clicked
+
+    function onMouseClick( event ) {
+        const rect = renderer.domElement.getBoundingClientRect();
+        pointer.x = ( ( event.clientX - rect.left ) / rect.width ) * 2 - 1;
+        pointer.y = - ( ( event.clientY - rect.top ) / rect.height ) * 2 + 1;
+
+        raycaster.setFromCamera( pointer, camera );
+
+        if (!activeViewers[tabId].modelGroup) return;
+        
+        const intersects = raycaster.intersectObjects( activeViewers[tabId].modelGroup.children, true );
+
+        if ( intersects.length > 0 ) {
+            const res = intersects[ 0 ];
+            let object = res.object;
+            
+            // Logic: Clear previous selection
+            if (selectedObject) {
+                selectedObject.layers.disable( BLOOM_SCENE );
             }
-            animate();
-        }
 
-        function startAnimation(tabId) {
-            console.log(`Starting animation for ${tabId}`);
-            const viewer = activeViewers[tabId];
-            if (!viewer || !viewer.modelGroup) {
-                console.warn(`No model group found for ${tabId} to animate.`);
-                return;
+            selectedObject = object;
+
+            const objectId = selectedObject.userData.id || selectedObject.parent?.userData.id;
+            
+            // List of items that should NOT glow
+            const noGlowList = ['Floor', 'Toilet'];
+
+            // Only enable bloom if the item is NOT in the list
+            if ( !noGlowList.includes(objectId) ) {
+                selectedObject.layers.enable( BLOOM_SCENE );
             }
+            // Update Tooltip Text
+            let label = objectId || "Unknown Part";
+            
+            tooltip.innerHTML = `
+                <h4>${label}</h4>
+            `;
+            tooltip.style.display = 'block';
 
-            viewer.modelGroup.children.forEach(part => {
-                if (part.userData.endPos) {
-                    // Set the target for the animation loop
-                    part.userData.targetPosition = new THREE.Vector3(
-                        part.userData.endPos.x,
-                        part.userData.endPos.y,
-                        part.userData.endPos.z
-                    );
-                }
-            });
-        }
-
-        function resetAnimation(tabId) {
-            console.log(`Resetting animation for ${tabId}`);
-            const viewer = activeViewers[tabId];
-            if (!viewer || !viewer.modelGroup) {
-                console.warn(`No model group found for ${tabId} to reset.`);
-                return;
+        } else {
+            // ... existing deselect logic ...
+            if (selectedObject) {
+                selectedObject.layers.disable( BLOOM_SCENE );
+                selectedObject = null;
             }
-
-            viewer.modelGroup.children.forEach(part => {
-                if (part.userData.startPos) {
-                    // Set the target for the animation loop
-                    part.userData.targetPosition = new THREE.Vector3(
-                        part.userData.startPos.x,
-                        part.userData.startPos.y,
-                        part.userData.startPos.z
-                    );
-                }
-            });
+            tooltip.style.display = 'none';
         }
+    }
 
-        // --- Specific initializers for each tab (now async) ---
-        async function initTab1(tabId) {
-            await setupViewer(tabId, viewer1Defs);
-        }
+    renderer.domElement.addEventListener( 'pointerdown', onMouseClick );
 
-        async function initTab2(tabId) {
-            await setupViewer(tabId, viewer2Defs);
-        }
 
-        async function initTab3(tabId) {
-            await setupViewer(tabId, viewer3Defs);
-        }
+    // --- STORAGE ---
+    activeViewers[tabId] = { 
+        scene, camera, renderer, controls, container, 
+        modelGroup: null,
+        bloomComposer, finalComposer,
+        getSelected: () => selectedObject
+    };
 
-        // --- Tab Switching Logic (now async) ---
-        document.addEventListener('DOMContentLoaded', async () => { // Make async
-            const tabLinks = document.querySelectorAll('.tab-link');
-            const tabContents = document.querySelectorAll('.tab-content');
+    // Load Models
+    const objLoader = new OBJLoader();
+    try {
+        const currentModelGroup = await loadModelsFromDefs(modelDefs, objLoader);
+        scene.add(currentModelGroup);
+        activeViewers[tabId].modelGroup = currentModelGroup; 
+        camera.position.set(30, 10, -20);
+    } catch (e) {
+        console.error(e);
+    }
 
-            tabLinks.forEach(link => {
-                link.addEventListener('click', async () => { // Make async
-                    const tabId = link.getAttribute('data-tab');
-                    tabLinks.forEach(item => item.classList.remove('active'));
-                    tabContents.forEach(item => item.classList.remove('active'));
-                    link.classList.add('active');
-                    const activeContent = document.getElementById(tabId);
-                    activeContent.classList.add('active');
+    // --- ANIMATION LOOP ---
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
 
-                    if (!initializedViewers[tabId]) {
-                        initializedViewers[tabId] = true;
-                        
-                        // We now await the init functions
-                        if (tabId === 'Tab1') {
-                            await initTab1(tabId);
-                        } else if (tabId === 'Tab2') {
-                            await initTab2(tabId);
-                        } else if (tabId === 'Tab3') {
-                            await initTab3(tabId);
-                        }
+        // Animation Logic (Lerp)
+        if (activeViewers[tabId].modelGroup) {
+            activeViewers[tabId].modelGroup.rotation.y += 0.0002;
+            activeViewers[tabId].modelGroup.children.forEach(part => {
+                if (part.userData.targetPosition) {
+                    part.position.lerp(part.userData.targetPosition, 0.01);
+                    if (part.position.distanceTo(part.userData.targetPosition) < 0.01) {
+                        part.position.copy(part.userData.targetPosition);
+                        part.userData.targetPosition = null;
                     }
-                });
+                }
             });
+        }
 
-            // 4. Initialize the default active tab (and await it)
-            const defaultTab = document.querySelector('.tab-link.active');
-            if (defaultTab) {
-                const defaultTabId = defaultTab.getAttribute('data-tab');
-                await initTab1(defaultTabId); // Await the first tab load
-                initializedViewers[defaultTabId] = true;
+        // --- TOOLTIP POSITION SYNC ---
+        // If an object is selected, move the tooltip to follow it
+        if (selectedObject) {
+            // Get world position
+            const vector = new THREE.Vector3();
+            selectedObject.getWorldPosition(vector);
+            
+            // Project 3D point to 2D screen space
+            vector.project(camera);
+
+            // Convert to CSS coordinates
+            const x = (vector.x * .5 + .5) * container.clientWidth;
+            const y = (-(vector.y * .5) + .5) * container.clientHeight;
+
+            tooltip.style.left = `${container.offsetLeft + x}px`;
+            tooltip.style.top = `${container.offsetTop + y}px`;
+        }
+
+        // --- RENDER ---
+        scene.traverse( darkenNonBloomed );
+        bloomComposer.render();
+        scene.traverse( restoreMaterial );
+        finalComposer.render();
+    }
+    animate();
+}
+
+function startAnimation(tabId) {
+    const viewer = activeViewers[tabId];
+    if (!viewer || !viewer.modelGroup) return;
+    viewer.modelGroup.children.forEach(part => {
+        if (part.userData.endPos) part.userData.targetPosition = new THREE.Vector3(part.userData.endPos.x, part.userData.endPos.y, part.userData.endPos.z);
+    });
+}
+
+function resetAnimation(tabId) {
+    const viewer = activeViewers[tabId];
+    if (!viewer || !viewer.modelGroup) return;
+    viewer.modelGroup.children.forEach(part => {
+        if (part.userData.startPos) part.userData.targetPosition = new THREE.Vector3(part.userData.startPos.x, part.userData.startPos.y, part.userData.startPos.z);
+    });
+}
+
+async function initTab1(tabId) { await setupViewer(tabId, viewer1Defs); }
+async function initTab2(tabId) { await setupViewer(tabId, viewer2Defs); }
+async function initTab3(tabId) { await setupViewer(tabId, viewer3Defs); }
+
+document.addEventListener('DOMContentLoaded', async () => {
+    const tabLinks = document.querySelectorAll('.tab-link');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabLinks.forEach(link => {
+        link.addEventListener('click', async () => {
+            const tabId = link.getAttribute('data-tab');
+            tabLinks.forEach(item => item.classList.remove('active'));
+            tabContents.forEach(item => item.classList.remove('active'));
+            link.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+
+            if (!initializedViewers[tabId]) {
+                initializedViewers[tabId] = true;
+                if (tabId === 'Tab1') await initTab1(tabId);
+                else if (tabId === 'Tab2') await initTab2(tabId);
+                else if (tabId === 'Tab3') await initTab3(tabId);
             }
-            document.getElementById('animate-btn-Tab1').addEventListener('click', () => startAnimation('Tab1'));
-            document.getElementById('reset-btn-Tab1').addEventListener('click', () => resetAnimation('Tab1'));
-
-            document.getElementById('animate-btn-Tab2').addEventListener('click', () => startAnimation('Tab2'));
-            document.getElementById('reset-btn-Tab2').addEventListener('click', () => resetAnimation('Tab2'));
-
-            document.getElementById('animate-btn-Tab3').addEventListener('click', () => startAnimation('Tab3'));
-            document.getElementById('reset-btn-Tab3').addEventListener('click', () => resetAnimation('Tab3'));
+            // Hide tooltip when switching tabs to avoid floating artifacts
+            tooltip.style.display = 'none';
         });
+    });
 
-        // --- Global Resize Handler (no changes) ---
-        window.addEventListener('resize', () => {
-            const activeContent = document.querySelector('.tab-content.active');
-            if (!activeContent) return;
+    const defaultTab = document.querySelector('.tab-link.active');
+    if (defaultTab) {
+        const defaultTabId = defaultTab.getAttribute('data-tab');
+        await initTab1(defaultTabId);
+        initializedViewers[defaultTabId] = true;
+    }
 
-            const tabId = activeContent.id;
-            const viewer = activeViewers[tabId];
-            if (!viewer) return;
+    document.getElementById('animate-btn-Tab1').addEventListener('click', () => startAnimation('Tab1'));
+    document.getElementById('reset-btn-Tab1').addEventListener('click', () => resetAnimation('Tab1'));
+    document.getElementById('animate-btn-Tab2').addEventListener('click', () => startAnimation('Tab2'));
+    document.getElementById('reset-btn-Tab2').addEventListener('click', () => resetAnimation('Tab2'));
+    document.getElementById('animate-btn-Tab3').addEventListener('click', () => startAnimation('Tab3'));
+    document.getElementById('reset-btn-Tab3').addEventListener('click', () => resetAnimation('Tab3'));
+});
 
-            viewer.camera.aspect = viewer.container.clientWidth / viewer.container.clientHeight;
-            viewer.camera.updateProjectionMatrix();
-            viewer.renderer.setSize(viewer.container.clientWidth, viewer.container.clientHeight);
-        });
+window.addEventListener('resize', () => {
+    const activeContent = document.querySelector('.tab-content.active');
+    if (!activeContent) return;
+    const tabId = activeContent.id;
+    const viewer = activeViewers[tabId];
+    if (!viewer) return;
+
+    const width = viewer.container.clientWidth;
+    const height = viewer.container.clientHeight;
+    const pixelRatio = window.devicePixelRatio; // Get current ratio
+
+    viewer.camera.aspect = width / height;
+    viewer.camera.updateProjectionMatrix();
+    
+    viewer.renderer.setSize(width, height);
+    viewer.renderer.setPixelRatio(pixelRatio);
+
+    // Resize composers with the correct ratio
+    if(viewer.bloomComposer) viewer.bloomComposer.setSize(width * pixelRatio, height * pixelRatio);
+    if(viewer.finalComposer) viewer.finalComposer.setSize(width * pixelRatio, height * pixelRatio);
+
+    // Update FXAA uniforms if it exists (you might need to store fxaaPass in activeViewers to access it here)
+    // Note: To do this strictly correctly, you should return fxaaPass from setupViewer and store it in activeViewers
+    const fxaaPass = viewer.finalComposer.passes.find(p => p.material && p.material.uniforms && p.material.uniforms.resolution);
+    if (fxaaPass) {
+        fxaaPass.material.uniforms[ 'resolution' ].value.x = 1 / ( width * pixelRatio );
+        fxaaPass.material.uniforms[ 'resolution' ].value.y = 1 / ( height * pixelRatio );
+    }
+});

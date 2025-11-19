@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Installation Demo | Nauset Manufacturing</title>
+    <link rel="stylesheet" href="style.css">
+    <script type="importmap">
+        {
+          "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
+            "three/examples/jsm/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+          }
+        }
+</script>
+</head>
+<body>
+
+    <nav class="nav-container">
+        <div class="nav-glass">
+            <a href="index.html" class="logo">
+                <img src="logo.jpg" alt="Nauset Manufacturing Logo">
+                <span class="logo-text">Nauset Mfg.</span>
+            </a>
+            
+            <div class="nav-links">
+                <a href="index.html#product">The Jonny Joint</a>
+                <a href="index.html#technology">Technology</a>
+                <a href="investors.html">Investors</a>
+                <a href="mailto:info@nausetmfg.com">Contact</a>
+            </div>
+        </div>
+    </nav>
+    
+    <section class="app-container" style="padding-top: 160px; min-height: 80vh;">
+        
+        <div class="tab-bar" style="margin-top: 0;">
+            <button class="tab-link active" data-tab="Tab1">Installation</button>
+            <button class="tab-link" data-tab="Tab2">Sealing Plug</button>
+            <button class="tab-link" data-tab="Tab3">Hardware Demo</button>
+        </div>
+
+        <div id="Tab1" class="tab-content active">
+            <div class="viewer-layout">
+                <div class="canvas-container" id="canvas-container-Tab1">
+                    <div class="btn-container">
+                        <button id="animate-btn-Tab1" class="animate-btn">Install</button>
+                        <button id="reset-btn-Tab1" class="reset-btn">Reset</button>
+                    </div>
+                </div>
+                <div class="info-pane">
+                    <h3>Installation with toilet</h3>
+                    <p>Initiate the animation by clicking "Install"</p>
+                    <p>A telescoping toilet mounting assembly and a method for mounting a toilet to a floor and a wastewater pipe. Hollow bolts project from clamping plates to be received through mounting holes in an upper male flange section and through mounting holes of a toilet base. Base bolt nuts are tightened onto the hollow bolts to secure the upper male flange section to the toilet base prior to lowering the toilet and the upper male flange section into engagement with a lower female flange section. </p>
+                </div>
+            </div>
+        </div>
+
+        <div id="Tab2" class="tab-content">
+            <div class="viewer-layout">
+                <div class="canvas-container" id="canvas-container-Tab2">
+                    <div class="btn-container">
+                        <button id="animate-btn-Tab2" class="animate-btn">Install</button>
+                        <button id="reset-btn-Tab2" class="reset-btn">Reset</button>
+                    </div>
+                </div>
+                <div class="info-pane">
+                    <h3>Demonstration of sealing plug</h3>
+                    <p>Initiate the animation by clicking "Install"</p>
+                    <p>A telescoping toilet mounting assembly and a method for mounting a toilet to a floor and a wastewater pipe. Hollow bolts project from clamping plates to be received through mounting holes in an upper male flange section and through mounting holes of a toilet base. Base bolt nuts are tightened onto the hollow bolts to secure the upper male flange section to the toilet base prior to lowering the toilet and the upper male flange section into engagement with a lower female flange section. </p>
+                </div>
+            </div>
+        </div>
+
+        <div id="Tab3" class="tab-content">
+            <div class="viewer-layout">
+                <div class="canvas-container" id="canvas-container-Tab3">
+                    <div class="btn-container">
+                        <button id="animate-btn-Tab3" class="animate-btn">Install</button>
+                        <button id="reset-btn-Tab3" class="reset-btn">Reset</button>
+                    </div>
+                </div>
+                <div class="info-pane">
+                    <h3>Hardware Demo</h3>
+                    <p>Initiate the animation by clicking "Install"</p>
+                    <p>A telescoping toilet mounting assembly and a method for mounting a toilet to a floor and a wastewater pipe. Hollow bolts project from clamping plates to be received through mounting holes in an upper male flange section and through mounting holes of a toilet base. Base bolt nuts are tightened onto the hollow bolts to secure the upper male flange section to the toilet base prior to lowering the toilet and the upper male flange section into engagement with a lower female flange section. </p>
+                </div>
+            </div>
+        </div>
+    
+    </section>
+
+    <footer>
+        <div class="app-container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <h4>Nauset Manufacturing</h4>
+                    <p style="color: #999; font-size: 0.9rem; line-height: 1.6;">
+                        Pioneering the next generation of sanitary engineering hardware. Precision manufacturing for the modern tradesperson.
+                    </p>
+                </div>
+                <div class="footer-col">
+                    <h4>Product</h4>
+                    <ul>
+                        <li><a href="viewer.html?tab=Tab1">Installation Guide</a></li>
+                        <li><a href="viewer.html?tab=Tab2">Assembly</a></li>
+                        <li><a href="viewer.html?tab=Tab3">Parts Catalog</a></li>
+                        <li><a href="#">Distributor Locator</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Company</h4>
+                    <ul>
+                        <li><a href="index.html">About Nauset</a></li>
+                        <li><a href="#">Leadership</a></li>
+                        <li><a href="#">Press & Media</a></li>
+                        <li><a href="#">Careers</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Contact</h4>
+                    <ul>
+                        <li><a href="#">General Inquiries</a></li>
+                        <li><a href="#">Wholesale Support</a></li>
+                        <li><a href="investors.html">Investor Relations</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="legal-line">
+                &copy; 2025 Nauset Manufacturing. All rights reserved. <br> 
+                The Jonny Joint name and design are registered trademarks.
+            </div>
+        </div>
+    </footer>
+
+    <script type="module" src="script.js" defer></script>
+</body>
+</html>
