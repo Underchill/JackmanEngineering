@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Technology | Nauset Manufacturing</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        /* Page-specific overrides for comparison tables/cards */
+        .tech-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-top: 40px;
+        }
+        .tech-card {
+            padding: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+        .tech-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 4px;
+        }
+        .card-wax::before { background: #8b5e3c; } /* Brown for wax */
+        .card-hydro::before { background: var(--primary); } /* Blue for tech */
+        
+        .comparison-point {
+            margin-bottom: 25px;
+            padding-bottom: 25px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .comparison-point:last-child { border-bottom: none; }
+        .comparison-label {
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            display: block;
+        }
+        .vs-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.1);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            margin-bottom: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .tech-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="nav-container">
+        <div class="nav-glass">
+            <a href="index.html" class="logo">
+                <img src="logo.jpg" alt="Nauset Mfg Logo">
+                <span class="logo-text">Nauset Mfg.</span>
+            </a>
+            <div class="nav-links">
+                <a href="index.html#product">The Jonny Joint</a>
+                <a href="technology.html" class="active" style="color: #fff;">Technology</a>
+                <a href="investors.html">Investors</a>
+                <a href="mailto:info@nausetmfg.com">Contact</a>
+                <a href="viewer.html" class="nav-cta">Launch Demo</a> 
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero-section">
+        <div class="app-container">
+            <span class="tagline">Material Science</span>
+            <h1 class="hero-title">Beyond Wax.</h1>
+            <p class="hero-sub">
+                For 100 years, plumbing has relied on beeswax to seal toilets. It’s messy, unreliable, and biologically degradable. We engineered a synthetic, hydrophobic alternative.
+            </p>
+        </div>
+    </section>
+
+    <section class="app-container">
+        <div class="tech-grid">
+            
+            <div class="glass-panel tech-card card-wax">
+                <span class="vs-badge" style="color: #ccafa5;">Legacy Standard</span>
+                <h2>The Wax Ring</h2>
+                <p>The industry standard since the early 20th century. While cheap, wax has zero elasticity, meaning it cannot recover its shape once deformed.</p>
+                
+                <div class="comparison-point">
+                    <span class="comparison-label">Elasticity & Memory</span>
+                    <h4 style="color: #ccafa5;">Plastic Deformation</h4>
+                    <p>If a toilet rocks or shifts, the wax compresses but does not spring back. This creates air gaps where sewer gas and water can escape.</p>
+                </div>
+
+                <div class="comparison-point">
+                    <span class="comparison-label">Biological Resistance</span>
+                    <h4 style="color: #ccafa5;">Organic Degradation</h4>
+                    <p>As an organic material, wax can break down over decades of exposure to bacteria and waste, eventually compromising the seal.</p>
+                </div>
+
+                <div class="comparison-point">
+                    <span class="comparison-label">Installation</span>
+                    <h4 style="color: #ccafa5;">Single-Attempt Failure</h4>
+                    <p>You only get one shot. If the toilet is not set perfectly the first time, the wax ring is ruined and must be scraped off and replaced.</p>
+                </div>
+            </div>
+
+            <div class="glass-panel tech-card card-hydro">
+                <span class="vs-badge" style="color: #4facfe;">Nauset Innovation</span>
+                <h2>Hydrophobic O-Ring</h2>
+                <p>A precision-engineered NBR (Nitrile Butadiene Rubber) seal treated for maximum hydrophobicity. It adapts, reacts, and lasts.</p>
+
+                <div class="comparison-point">
+                    <span class="comparison-label">Elasticity & Memory</span>
+                    <h4 style="color: #4facfe;">Dynamic Compression</h4>
+                    <p>Our seal maintains outward radial pressure against the pipe walls. If the fixture shifts, the O-ring expands to fill the void instantly.</p>
+                </div>
+
+                <div class="comparison-point">
+                    <span class="comparison-label">Biological Resistance</span>
+                    <h4 style="color: #4facfe;">Inert Synthetic</h4>
+                    <p>Engineered to be chemically inert. It repels water (hydrophobic) and is impervious to biological decay or harsh cleaning chemicals.</p>
+                </div>
+
+                <div class="comparison-point">
+                    <span class="comparison-label">Installation</span>
+                    <h4 style="color: #4facfe;">Infinite Adjustability</h4>
+                    <p>The telescoping action allows the seal to slide up and down. It can be removed, wiped clean, and re-installed without losing integrity.</p>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <section class="section-block app-container">
+        <div class="split-layout">
+            <div class="split-text">
+                <span class="tagline">Hydrophobic Properties</span>
+                <h2>The Science of Repulsion</h2>
+                <p>
+                    Water naturally seeks the path of least resistance. Traditional seals rely purely on gravity and sticky mass to hold water back.
+                </p>
+                <p>
+                    The Jonny Joint seal utilizes <strong>contact angle engineering</strong>. The surface tension of our material is higher than that of water, causing fluids to bead up and roll off rather than permeate the boundary layer. This "Lotus Effect" ensures that even under back-pressure, the seal remains impermeable.
+                </p>
+                <a href="viewer.html?tab=Tab2" class="hero-btn-secondary" style="margin-top: 20px;">View Seal Animation</a>
+            </div>
+            <div class="split-visual glass-panel" style="display:flex; align-items:center; justify-content:center; height: 400px;">
+                <div style="position:relative; width: 200px; height: 200px;">
+                     <div style="position:absolute; bottom:0; width:100%; height:4px; background:var(--primary);"></div>
+                     <div style="
+                        position:absolute; 
+                        bottom:4px; 
+                        left:50%; 
+                        transform:translateX(-50%); 
+                        width:80px; 
+                        height:80px; 
+                        background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.8), rgba(79, 172, 254, 0.8));
+                        border-radius: 50% 50% 45% 45%;
+                        box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+                     "></div>
+                     <p style="position:absolute; width:100%; text-align:center; bottom: -40px; color: var(--text-muted); font-size: 0.8rem;">High Contact Angle (Hydrophobic)</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="app-container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <h4>Nauset Manufacturing</h4>
+                    <p style="color: #999; font-size: 0.9rem; line-height: 1.6;">
+                        Pioneering the next generation of sanitary engineering hardware. Precision manufacturing for the modern tradesperson.
+                    </p>
+                </div>
+                <div class="footer-col">
+                    <h4>Product</h4>
+                    <ul>
+                        <li><a href="viewer.html?tab=Tab1">Installation Guide</a></li>
+                        <li><a href="viewer.html?tab=Tab2">Assembly</a></li>
+                        <li><a href="viewer.html?tab=Tab3">Parts Catalog</a></li>
+                        <li><a href="#">Distributor Locator</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Company</h4>
+                    <ul>
+                        <li><a href="index.html">About Nauset</a></li>
+                        <li><a href="#">Leadership</a></li>
+                        <li><a href="#">Press & Media</a></li>
+                        <li><a href="#">Careers</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Contact</h4>
+                    <ul>
+                        <li><a href="#">General Inquiries</a></li>
+                        <li><a href="#">Wholesale Support</a></li>
+                        <li><a href="investors.html">Investor Relations</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="legal-line">
+                &copy; 2025 Nauset Manufacturing. All rights reserved. <br> 
+                The Jonny Joint name and design are registered trademarks.
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

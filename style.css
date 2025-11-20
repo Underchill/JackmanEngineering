@@ -130,7 +130,6 @@ p { color: var(--text-muted); margin-bottom: 1rem; }
    ========================================= */
 .hero-section {
     padding-top: 180px;
-    padding-bottom: 80px;
     text-align: center;
 }
 .investor-hero {
@@ -215,7 +214,16 @@ p { color: var(--text-muted); margin-bottom: 1rem; }
 /* =========================================
    6. FOOTER
    ========================================= */
-footer { padding: 60px 0 20px; margin-top: auto; border-radius: 0; border-left: none; border-right: none; border-bottom: none;}
+footer { 
+    padding: 30px;
+    padding-bottom: 0;
+    margin-top: auto;
+    border-radius: 0; 
+    border-left: none;
+     border-right: none;
+      border-bottom: none;
+  }
+
 .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 40px; }
 .footer-col a { font-size: 0.9rem; color: var(--text-muted); display: block; margin-bottom: 8px; }
 .footer-col a:hover { color: var(--primary); }
@@ -254,7 +262,6 @@ footer { padding: 60px 0 20px; margin-top: auto; border-radius: 0; border-left: 
 
     /* 3. Adjust Page Spacing */
     .hero-section { 
-        padding-top: 120px; /* nav broken, need this*/
         padding-left: 20px;
         padding-right: 20px;
     }
@@ -281,12 +288,11 @@ footer { padding: 60px 0 20px; margin-top: auto; border-radius: 0; border-left: 
     .tab-bar { flex-wrap: wrap; }
     .tab-link { flex: 1 1 40%; font-size: 0.85rem; padding: 10px; text-align: center;}
     /* --- FOOTER MOBILE FIX --- */
-    footer {
+    .footer {
         text-align: center;
-        padding: 40px 0 20px;
     }
     .footer-grid {
-        grid-template-columns: 1fr; /* Stack vertically */
+        grid-template-columns: 1fr 1fr; /* Stack vertically */
         gap: 10px;
         text-align: center;
     }
