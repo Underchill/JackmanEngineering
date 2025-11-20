@@ -51,6 +51,27 @@
             font-size: 0.8rem;
             margin-bottom: 20px;
         }
+
+        /* Certification Badge Style */
+        .cert-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(79, 172, 254, 0.1);
+            border: 1px solid rgba(79, 172, 254, 0.3);
+            padding: 10px 20px;
+            border-radius: 50px;
+            color: #4facfe;
+            font-weight: 600;
+            margin-top: 20px;
+        }
+        .cert-icon {
+            width: 24px; height: 24px;
+            border: 2px solid #4facfe;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px;
+        }
         
         @media (max-width: 768px) {
             .tech-grid { grid-template-columns: 1fr; }
@@ -69,7 +90,7 @@
                 <a href="index.html#product">The Jonny Joint</a>
                 <a href="technology.html" class="active" style="color: #fff;">Technology</a>
                 <a href="investors.html">Investors</a>
-                <a href="mailto:info@nausetmfg.com">Contact</a>
+                <a href="contact.html">Contact</a>
                 <a href="viewer.html" class="nav-cta">Launch Demo</a> 
             </div>
         </div>
@@ -142,33 +163,35 @@
     <section class="section-block app-container">
         <div class="split-layout">
             <div class="split-text">
-                <span class="tagline">Hydrophobic Properties</span>
-                <h2>The Science of Repulsion</h2>
+                <span class="tagline">Durability</span>
+                <h2>Built to Last.</h2>
                 <p>
-                    Water naturally seeks the path of least resistance. Traditional seals rely purely on gravity and sticky mass to hold water back.
+                    We didn't need to reinvent physics; we just needed a better material. That's why we use a high-quality NBR rubber O-ring—the same durable synthetic found in automotive engines and industrial machinery.
                 </p>
                 <p>
-                    The Jonny Joint seal utilizes <strong>contact angle engineering</strong>. The surface tension of our material is higher than that of water, causing fluids to bead up and roll off rather than permeate the boundary layer. This "Lotus Effect" ensures that even under back-pressure, the seal remains impermeable.
+                    Unlike wax, which rots and degrades over time, this rubber is designed to exist in wet environments forever. It simply will not wear out, ensuring a permanent, watertight seal that you can trust for the life of the building.
                 </p>
                 <a href="viewer.html?tab=Tab2" class="hero-btn-secondary" style="margin-top: 20px;">View Seal Animation</a>
             </div>
-            <div class="split-visual glass-panel" style="display:flex; align-items:center; justify-content:center; height: 400px;">
-                <div style="position:relative; width: 200px; height: 200px;">
-                     <div style="position:absolute; bottom:0; width:100%; height:4px; background:var(--primary);"></div>
-                     <div style="
-                        position:absolute; 
-                        bottom:4px; 
-                        left:50%; 
-                        transform:translateX(-50%); 
-                        width:80px; 
-                        height:80px; 
-                        background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.8), rgba(79, 172, 254, 0.8));
-                        border-radius: 50% 50% 45% 45%;
-                        box-shadow: 0 10px 20px rgba(0,0,0,0.5);
-                     "></div>
-                     <p style="position:absolute; width:100%; text-align:center; bottom: -40px; color: var(--text-muted); font-size: 0.8rem;">High Contact Angle (Hydrophobic)</p>
-                </div>
+        </div>
+    </section>
+
+    <section class="app-container" style="margin-bottom: 80px;">
+        <div class="glass-panel" style="padding: 60px; text-align: center; background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(79,172,254,0.05) 100%);">
+            <span class="tagline">Industry Validation</span>
+            <h2 style="margin-bottom: 20px;">Defining the Standard.</h2>
+            <p style="max-width: 700px; margin: 0 auto 30px;">
+                The Jonny Joint technology is so unique that existing codes didn't cover it. We worked directly with IAPMO to create a rigorous new testing protocol for telescoping flanges.
+            </p>
+            
+            <div class="cert-badge">
+                <div class="cert-icon">✓</div>
+                <span>Certified: IAPMO IGC 396-2025a</span>
             </div>
+            
+            <p style="margin-top: 30px; font-size: 0.9rem; color: var(--text-muted);">
+                First-of-its-kind certification for "Adjustable Telescoping Water Closet Flanges"
+            </p>
         </div>
     </section>
 
