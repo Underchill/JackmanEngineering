@@ -293,8 +293,8 @@ async function setupViewer(tabId, modelDefs) {
 
     // Environment
     new RGBELoader()
-        .setPath('https://threejs.org/examples/textures/equirectangular/')
-        .load('royal_esplanade_1k.hdr', function (texture) {
+        .setPath('./MATERIALS/')
+        .load('royal_esplanade.jpg', function (texture) {
             texture.mapping = THREE.EquirectangularReflectionMapping;
             const pmremGenerator = new THREE.PMREMGenerator(renderer);
             const envMap = pmremGenerator.fromEquirectangular(texture).texture;
