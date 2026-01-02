@@ -157,10 +157,32 @@ p { color: var(--text-muted); margin-bottom: 1rem; }
 .metric-card:hover { background: rgba(255,255,255,0.1); transform: translateY(-5px); }
 .metric-val { display: block; font-size: 3rem; font-weight: 800; background: var(--primary-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
-/* Split Layout (Product Section) */
+/* Split Layout (General) */
 .section-block { padding: 50px; padding-left: 30px; padding-right: 30px;}
 .split-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
+
+/* --- NEW: Process Row (Small Image / Large Text) --- */
+.process-row {
+    display: grid;
+    /* 1 part for image, 4 parts for text (approx 20% / 80%) */
+    grid-template-columns: 1fr 2fr; 
+    gap: 40px;
+    align-items: start; /* Align text to top of image */
+    margin-top: 60px;
+    padding-top: 60px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+}
+
 .product-placeholder { height: 400px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+
+/* Ensure images in the visual container fill width */
+.split-visual img {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    border-radius: var(--radius);
+    border: 1px solid var(--glass-border);
+}
 
 /* Investors Specific */
 .patent-card { padding: 40px; margin-bottom: 60px; }
@@ -181,16 +203,12 @@ p { color: var(--text-muted); margin-bottom: 1rem; }
 .tab-content.active { display: block; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-.app-container{
-    
-}
 .viewer-layout {
     display: grid;
-    grid-template-columns: 3fr 1fr; /* CHANGED: Canvas is now 3x wider than text */
+    grid-template-columns: 3fr 1fr; 
     gap: 20px;
     height: 70vh; 
     min-height: 500;
-
 }
 
 .canvas-container {
@@ -215,14 +233,9 @@ p { color: var(--text-muted); margin-bottom: 1rem; }
    6. FOOTER
    ========================================= */
 footer { 
-    padding: 30px;
-    padding-bottom: 0;
-    margin-top: auto;
-    border-radius: 0; 
-    border-left: none;
-     border-right: none;
-      border-bottom: none;
-  }
+    padding: 30px; padding-bottom: 0; margin-top: auto;
+    border-radius: 0; border-left: none; border-right: none; border-bottom: none;
+}
 
 .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 40px; }
 .footer-col a { font-size: 0.9rem; color: var(--text-muted); display: block; margin-bottom: 8px; }
@@ -230,75 +243,64 @@ footer {
 .legal-line { text-align: center; color: rgba(255,255,255,0.3); font-size: 0.8rem; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.05); }
 
 /* =========================================
-   7. MOBILE RESPONSIVE (UPDATED)
+   7. MOBILE RESPONSIVE
    ========================================= */
 @media (max-width: 768px) {
-    
-    /* 1. Navigation Behavior */
-    .nav-container {
-        position: absolute; /* Scrolls away with the page */
-        padding: 15px 0;
-    }
+    /* 1. Navigation */
+    .nav-container { position: absolute; padding: 15px 0; }
+    .nav-glass { flex-direction: row; padding: 8px 20px; }
+    .nav-links { gap: 0; }
+    .nav-links a { display: none; }
+    .nav-links .nav-cta { display: block; padding: 8px 20px; font-size: 0.85rem; }
 
-    .nav-glass {
-        flex-direction: row; /* Keep horizontal layout */
-        padding: 8px 20px;   /* Minimal padding */
-    }
-
-    /* 2. Hide extra links */
-    .nav-links {
-        gap: 0;
-    }
-    
-    .nav-links a {
-        display: none; /* Hide all links by default */
-    }
-
-    .nav-links .nav-cta {
-        display: block; /* Only show the Launch Demo button */
-        padding: 8px 20px;
-        font-size: 0.85rem;
-    }
-
-    /* 3. Adjust Page Spacing */
-    .hero-section { 
-        padding-left: 20px;
-        padding-right: 20px;
-    }
-    .app-container { 
-        padding-left: 20px;
-        padding-right: 20px;
-    }
-    .investor-hero,{ 
-        padding-left: 20px;
-        padding-right: 20px;
-    }
-
-    /* 4. Content Adjustments */
+    /* 2. Layouts */
+    .hero-section, .app-container, .investor-hero { padding-left: 20px; padding-right: 20px; }
     .hero-title { font-size: 2.5rem; }
-    .split-layout, .patent-grid, .viewer-layout, .footer-grid { grid-template-columns: 1fr; }
+    
+    /* STACK EVERYTHING VERTICALLY */
+    .split-layout, .patent-grid, .viewer-layout, .footer-grid { 
+        grid-template-columns: 1fr; 
+    }
+
+    /* SPECIFIC FIX FOR PROCESS ROW ON MOBILE */
+    .process-row {
+        grid-template-columns: 1fr; /* Stack vertically */
+        text-align: center; /* Center justify text */
+        gap: 20px;
+    }
+    
+    /* Center the image and limit its size so it doesn't look huge */
+    .process-row .split-visual {
+        display: flex;
+        justify-content: center;
+        width: 100%;
+    }
+    .process-row .split-visual img {
+        max-width: 450px; /* Force image to be small icon/thumbnail size */
+        margin: 0 auto;
+    }
+
+    /* Ensure list items are also centered or clean */
+    .process-row ul {
+        text-align: center; 
+        padding: 0;
+        list-style: none; /* remove bullets if text-align is center to avoid awkward offset */
+    }
+
+    
     .metrics-container, .market-grid { grid-template-columns: 1fr; }
     
     .canvas-container, .product-placeholder { 
-        height: 600px; /* CHANGED: Increased from 350px to 500px */
+        height: 600px; 
         min-height: 500px; 
     }
     .viewer-layout { height: auto; }
     
     .tab-bar { flex-wrap: wrap; }
     .tab-link { flex: 1 1 40%; font-size: 0.85rem; padding: 10px; text-align: center;}
-    /* --- FOOTER MOBILE FIX --- */
-    .footer {
-        text-align: center;
-    }
-    .footer-grid {
-        grid-template-columns: 1fr 1fr; /* Stack vertically */
-        gap: 10px;
-        text-align: center;
-    }
-    /* Ensure links are big enough to tap easily */
-    .footer-col a {
-        padding: 5px 0;
-        font-size: 1rem;
-    }
+    
+    /* Footer */
+    .footer { text-align: center; }
+    .footer-grid { grid-template-columns: 1fr 1fr; gap: 10px; text-align: center; }
+    .footer-col a { padding: 5px 0; font-size: 1rem; }
 }
