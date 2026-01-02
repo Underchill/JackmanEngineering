@@ -153,25 +153,9 @@ const viewer1Defs = [
             startPos: { x: 0, y: 12, z: 0 }, 
             endPos: { x: 0, y: 0, z: 0 } },
 
-            { id: 'Nuts', obj: './PARTS/nuts.obj', materialKey: 'matMetallic',
-            startPos: { x: 0, y: 13, z: 0 }, 
-            endPos: { x: 0, y: 0, z: 0 } },
-
             { id: 'Screws', obj: './PARTS/screws.obj', materialKey: 'matMetallic',
             startPos: { x: 0, y: 18, z: 0 }, 
-            endPos: { x: 0, y: 0, z: 0 } },
-
-            { id: 'Upper Hardware', obj: './PARTS/topHW.obj', materialKey: 'matMetallic',
-            startPos: { x: 0, y: 2, z: 0 }, 
-            endPos: { x: 0, y: 0, z: 0 } },
-
-            { id: 'Male Flange', obj: './PARTS/maleFlange.obj', materialKey: 'matOrange',
-            startPos: { x: 0, y: 7, z: 0 }, 
-            endPos: { x: 0, y: 0, z: 0 } },
-
-            { id: 'Male Flange O-Ring', obj: './PARTS/maleFlangeO.obj', materialKey: 'matBlueO',
-            startPos: { x: 0, y: 7, z: 0 }, 
-            endPos: { x: 0, y: 0, z: 0 } },
+            endPos: { x: 0, y: -1, z: 0 } },
 
             { id: 'Bottom Hardware', obj: './PARTS/bottomHW.obj', materialKey: 'matMetallic',
             startPos: { x: 0, y: -1, z: 0 }, 
@@ -179,6 +163,10 @@ const viewer1Defs = [
 
             { id: 'Female Flange', obj: './PARTS/femaleFlange.obj', materialKey: 'matBlue',
             startPos: { x: 0, y: -5, z: 0 }, 
+            endPos: { x: 0, y: 0, z: 0 } },
+
+            { id: 'Drain', obj: './PARTS/drain.obj', materialKey: 'matWhite',
+            startPos: { x: 0, y: -12, z: 0 }, 
             endPos: { x: 0, y: 0, z: 0 } },
         ];
 
