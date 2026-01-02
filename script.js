@@ -292,15 +292,22 @@ async function setupViewer(tabId, modelDefs) {
     container.appendChild(renderer.domElement);
 
     // Environment
-    new RGBELoader()
+    // CHANGED: Use TextureLoader instead of RGBELoader for .jpg files
+    new THREE.TextureLoader() 
         .setPath('./MATERIALS/')
         .load('royal_esplanade.jpg', function (texture) {
+            texture.colorSpace = THREE.SRGBColorSpace; // Ensure colors look correct for a JPG
             texture.mapping = THREE.EquirectangularReflectionMapping;
+            
             const pmremGenerator = new THREE.PMREMGenerator(renderer);
+            pmremGenerator.compileEquirectangularShader();
+            
             const envMap = pmremGenerator.fromEquirectangular(texture).texture;
+            
             scene.backgroundBlurriness = 0.5;
             scene.environment = envMap; 
             scene.background = new THREE.Color(0x0E0E0E);
+            
             pmremGenerator.dispose();
             texture.dispose();
         });
