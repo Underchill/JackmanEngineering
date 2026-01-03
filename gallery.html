@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery | Nauset Manufacturing</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <nav class="nav-container">
+        <div class="nav-glass">
+            <a href="index.html" class="logo">
+                <img src="logo.jpg" alt="Nauset Manufacturing Logo">
+                <span class="logo-text">Nauset Mfg.</span>
+            </a>
+            
+            <div class="nav-links">
+                <a href="index.html#product">The Jonny Joint</a>
+                <a href="technology.html">Technology</a>
+                <a href="investors.html">Investors</a>
+                <a href="gallery.html" class="active">Gallery</a>
+                <a href="contact.html">Contact</a>
+                <a href="viewer.html" class="nav-cta">Launch Demo</a> 
+            </div>
+        </div>
+    </nav>
+
+    <section class="app-container hero-section" style="padding-bottom: 20px;">
+        <span class="tagline">Installation in Action</span>
+        <h1 class="hero-title" style="font-size: 3rem;">Product Gallery</h1>
+        <p class="hero-sub">
+            See the Jonny Joint™ used in real-world applications and installations.
+        </p>
+    </section>
+
+    <section class="app-container" style="display: flex; justify-content: center; margin-bottom: 30px;">
+        <div class="gallery-controls">
+            <span class="toggle-label active" id="label-a">Without Jonny Joint</span>
+            <label class="switch">
+                <input type="checkbox" id="gallery-toggle">
+                <span class="slider round"></span>
+            </label>
+            <span class="toggle-label" id="label-b">Jonny Joint Demo</span>
+        </div>
+    </section>
+
+    <section class="app-container section-block" style="padding-top: 0;">
+        <div id="gallery-grid" class="gallery-grid">
+            </div>
+    </section>
+
+    <footer>
+        <div class="app-container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <h4>Nauset Manufacturing</h4>
+                    <p style="color: #999; font-size: 0.9rem; line-height: 1.6;">
+                        Pioneering the next generation of sanitary engineering hardware. Precision manufacturing for the modern tradesperson.
+                    </p>
+                </div>
+                <div class="footer-col">
+                    <h4>Product</h4>
+                    <ul>
+                        <li><a href="viewer.html?tab=Tab1">Installation Guide</a></li>
+                        <li><a href="viewer.html?tab=Tab2">Assembly</a></li>
+                        <li><a href="gallery.html">Gallery</a></li>
+                        <li><a href="#">Distributor Locator</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Company</h4>
+                    <ul>
+                        <li><a href="index.html">About Nauset</a></li>
+                        <li><a href="contact.html">Leadership</a></li>
+                        <li><a href="contact.html">Press & Media</a></li>
+                        <li><a href="contact.html">Careers</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Contact</h4>
+                    <ul>
+                        <li><a href="contact.html">General Inquiries</a></li>
+                        <li><a href="contact.html">Wholesale Support</a></li>
+                        <li><a href="investors.html">Investor Relations</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="legal-line">
+                &copy; 2025 Nauset Manufacturing. All rights reserved. <br> 
+                The Jonny Joint name and design are registered trademarks.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const galleryContainer = document.getElementById('gallery-grid');
+            const toggle = document.getElementById('gallery-toggle');
+            const labelA = document.getElementById('label-a');
+            const labelB = document.getElementById('label-b');
+
+            // --- CONFIGURATION ---
+            // Ensure you have folders named 'gallery_a' and 'gallery_b'
+            const pathA = 'gallery_a/'; 
+            const pathB = 'gallery_b/';
+            
+            let currentPath = pathA;
+            let imageIndex = 1;
+            let activeLoading = false; // Prevents race conditions if toggled quickly
+
+            function loadGallery(path) {
+                // 1. Clear existing gallery
+                galleryContainer.innerHTML = '';
+                imageIndex = 1;
+                activeLoading = true;
+                
+                // 2. Start recursive loading
+                loadNextImage(path);
+            }
+
+            function loadNextImage(path) {
+                if (path !== currentPath) return; // Stop if user switched tabs while loading
+
+                const img = new Image();
+                const filename = `${imageIndex}.jpg`; 
+                img.src = path + filename;
+
+                img.onload = function() {
+                    if (path !== currentPath) return; 
+
+                    const item = document.createElement('div');
+                    item.className = 'gallery-item';
+                    item.innerHTML = `<img src="${this.src}" alt="Gallery Image ${imageIndex}" loading="lazy">`;
+                    galleryContainer.appendChild(item);
+                    
+                    imageIndex++;
+                    loadNextImage(path);
+                };
+
+                img.onerror = function() {
+                    // Stop loading when we hit a missing file
+                    if (imageIndex === 1) {
+                        galleryContainer.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: #666;">No images found in ${path}. Please ensure files are named 1.jpg, 2.jpg... inside the folder.</p>`;
+                    }
+                };
+            }
+
+            // --- TOGGLE EVENT LISTENER ---
+            toggle.addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    currentPath = pathB;
+                    labelA.classList.remove('active');
+                    labelB.classList.add('active');
+                } else {
+                    currentPath = pathA;
+                    labelA.classList.add('active');
+                    labelB.classList.remove('active');
+                }
+                loadGallery(currentPath);
+            });
+
+            // Initial Load
+            loadGallery(currentPath);
+        });
+    </script>
+</body>
+</html>
